@@ -1,0 +1,17 @@
+name: sip_solutions_erp
+description: ERP nativo offline para Android con SQLite.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  intl: ^0.18.0
+
+flutter:
+  uses-material-design: true

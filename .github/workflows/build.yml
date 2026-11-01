@@ -1,4 +1,4 @@
-name: Build ERP Juan v1.0 Final
+name: Build ERP Juan v1.0 Safe
 
 on:
   push:
@@ -68,23 +68,15 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0"
 
-      - name: Verificar y limpiar plantilla por defecto de Flutter
+      - name: Generar soporte Android de forma segura (Sin tocar lib/)
         run: |
-          # Si por alguna razón el main.dart apunta al contador por defecto, lo limpiamos o verificamos que exista lib/main.dart
-          if [ -f "lib/main.dart" ]; then
-            echo "El archivo lib/main.dart existe en el repositorio."
-          else
-            echo "Error: Falta lib/main.dart en el repositorio."
-            exit 1
+          # Si no existe la carpeta android, la creamos sin usar --overwrite para proteger lib/
+          if [ ! -d "android" ]; then
+            flutter create . --platforms=android --org com.erpjuan --project-name erp_juan
           fi
-
-      - name: Configurar etiqueta nativa de la App
-        run: |
-          if [ -d "android" ]; then
+          # Actualizar el nombre de la app nativa de forma segura
+          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
             sed -i 's/android:label="[^"]*"/android:label="ERP Juan v1.0"/g' android/app/src/main/AndroidManifest.xml || true
-          else
-            flutter create . --platforms=android --org com.erpjuan --project-name erp_juan --overwrite
-            sed -i 's/android:label="[^"]*"/android:label="ERP Juan v1.0"/g' android/app/src/main/AndroidManifest.xml
           fi
 
       - name: Instalar dependencias de Flutter

@@ -16,6 +16,7 @@ class _DashboardViewState extends State<DashboardView> {
   double totalCompras = 0.0;
   List<TransactionModel> items = [];
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -25,7 +26,11 @@ class _DashboardViewState extends State<DashboardView> {
 
   Future<void> loadData() async {
     if (!mounted) return;
-    setState(() => isLoading = true);
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
 
     try {
       final results = await Future.wait([
@@ -35,10 +40,16 @@ class _DashboardViewState extends State<DashboardView> {
       ]);
 
       if (!mounted) return;
+
       setState(() {
         totalVentas = results[0] as double;
         totalCompras = results[1] as double;
         items = results[2] as List<TransactionModel>;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = 'No se pudieron cargar los datos. Intenta nuevamente.';
       });
     } finally {
       if (mounted) {
@@ -89,16 +100,16 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
                 const SizedBox(height: 18),
                 _quickActionTile(
-                  icon: Icons.shopping_cart_rounded,
+                  icon: Icons.receipt_long_rounded,
                   iconColor: Colors.redAccent,
-                  label: 'Nueva Venta',
+                  label: 'Nueva Cuenta por Cobrar',
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const FormScreen(
-                          title: 'Registrar Venta',
+                          title: 'Nueva Cuenta por Cobrar',
                           type: 'VENTA',
                         ),
                       ),
@@ -107,7 +118,7 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
                 const SizedBox(height: 12),
                 _quickActionTile(
-                  icon: Icons.receipt_long_rounded,
+                  icon: Icons.shopping_cart_rounded,
                   iconColor: Colors.greenAccent,
                   label: 'Registrar Venta',
                   onTap: () {
@@ -167,39 +178,34 @@ class _DashboardViewState extends State<DashboardView> {
     required String label,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: const Color(0xFF1F2A3B),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 26),
+    return _PressableTile(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+              child: Icon(icon, color: iconColor, size: 26),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -228,6 +234,21 @@ class _DashboardViewState extends State<DashboardView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (errorMessage != null)
+                                Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.12),
+                                    border: Border.all(color: Colors.red.withOpacity(0.4)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    errorMessage!,
+                                    style: const TextStyle(color: Colors.white70),
+                                  ),
+                                ),
                               _header(),
                               const SizedBox(height: 20),
                               _alertBanner(
@@ -296,7 +317,7 @@ class _DashboardViewState extends State<DashboardView> {
                               _sectionTitle(),
                               const SizedBox(height: 10),
                               if (items.isEmpty)
-                                GestureDetector(
+                                _PressableCard(
                                   onTap: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
                                   child: Container(
                                     width: double.infinity,
@@ -314,7 +335,7 @@ class _DashboardViewState extends State<DashboardView> {
                                 )
                               else
                                 ...items.take(3).map(
-                                  (tx) => GestureDetector(
+                                  (tx) => _PressableCard(
                                     onTap: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
                                     child: Container(
                                       margin: const EdgeInsets.only(bottom: 10),
@@ -445,7 +466,7 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
             const SizedBox(width: 8),
-            GestureDetector(
+            _PressableTile(
               onTap: () => _showQuickActions(context),
               child: Container(
                 width: 44,
@@ -469,43 +490,46 @@ class _DashboardViewState extends State<DashboardView> {
     required Color accent,
     required VoidCallback onActionTap,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF101d34),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
+    return _PressableTile(
+      onTap: onActionTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF101d34),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.warning_amber_rounded, color: accent, size: 18),
             ),
-            child: Icon(Icons.warning_amber_rounded, color: accent, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          TextButton(
-            onPressed: onActionTap,
-            child: const Text(
-              'Exportar',
-              style: TextStyle(color: Colors.white, fontSize: 12),
+            TextButton(
+              onPressed: onActionTap,
+              child: const Text(
+                'Exportar',
+                style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -520,7 +544,7 @@ class _DashboardViewState extends State<DashboardView> {
     required Color iconColor,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return _PressableCard(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -644,7 +668,7 @@ class _DashboardViewState extends State<DashboardView> {
     required IconData icon,
     required bool active,
   }) {
-    return GestureDetector(
+    return _PressableCard(
       onTap: () {
         switch (label) {
           case 'Cobros':
@@ -701,14 +725,17 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
           ),
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1f2a38),
-              borderRadius: BorderRadius.circular(12),
+          _PressableTile(
+            onTap: () {},
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1f2a38),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 26),
             ),
-            child: const Icon(Icons.add, color: Colors.white, size: 26),
           ),
           const SizedBox(width: 10),
           Container(
@@ -735,3 +762,116 @@ class _DashboardViewState extends State<DashboardView> {
   }
 }
 
+class _PressableTile extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+
+  const _PressableTile({
+    required this.child,
+    required this.onTap,
+  });
+
+  @override
+  State<_PressableTile> createState() => _PressableTileState();
+}
+
+class _PressableTileState extends State<_PressableTile> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: _pressed
+                  ? [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.12),
+                        blurRadius: 18,
+                        spreadRadius: 0.8,
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PressableCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+
+  const _PressableCard({
+    required this.child,
+    required this.onTap,
+  });
+
+  @override
+  State<_PressableCard> createState() => _PressableCardState();
+}
+
+class _PressableCardState extends State<_PressableCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.985 : 1,
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: _pressed
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF68B7FF).withOpacity(0.18),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+          ),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}

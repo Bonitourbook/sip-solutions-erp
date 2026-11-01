@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 void main() async {
@@ -21,8 +21,8 @@ class DatabaseHelper {
 
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
-    return await openDatabase(
+    final path = p.join(dbPath, filePath);
+    return openDatabase(
       path,
       version: 1,
       onCreate: (db, version) async {
@@ -37,42 +37,18 @@ class DatabaseHelper {
             date TEXT
           )
         ''');
-        await db.insert('transactions', {
-          'type': 'VENTA',
-          'client': 'Olivia Chen (TechCorp)',
-          'client_type': 'Colaborador',
-          'amount': 3000.0,
-          'status': 'Vencida por 2 días',
-          'date': '2026-04-15',
-        });
-        await db.insert('transactions', {
-          'type': 'VENTA',
-          'client': 'Liam Brown (OmniSoft)',
-          'client_type': 'Cliente Final',
-          'amount': 3200.0,
-          'status': '¡Vence Hoy!',
-          'date': '2026-04-20',
-        });
-        await db.insert('transactions', {
-          'type': 'COMPRA',
-          'client': 'Proveedor Central',
-          'client_type': 'Proveedor',
-          'amount': 15000.0,
-          'status': 'Completada',
-          'date': '2026-04-10',
-        });
       },
     );
   }
 
   Future<List<Map<String, dynamic>>> getTransactions() async {
     final db = await instance.database;
-    return await db.query('transactions', orderBy: 'id DESC');
+    return db.query('transactions', orderBy: 'id DESC');
   }
 
   Future<int> insert(Map<String, dynamic> row) async {
     final db = await instance.database;
-    return await db.insert('transactions', row);
+    return db.insert('transactions', row);
   }
 
   Future<double> getSum(String type) async {
@@ -156,9 +132,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: const Text('S', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(width: 12),
-            Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text('ERP Juan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 11, color: Colors.green)),
               ],
@@ -181,9 +157,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 border: Border.all(color: Colors.red.withOpacity(0.4)),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Row(
                     children: [
                       Icon(Icons.error_outline, color: Colors.red, size: 20),
@@ -244,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Expanded(child: MetricCard(title: 'Por Cobrar', val: '\$7,550.00', subtitle: '1 Vencidas (\$3000)', color: Colors.redAccent, icon: Icons.schedule)),
                 const SizedBox(width: 12),
-                Expanded(child: MetricCard(title: 'Ingresos', val: '\$' + totalVentas.toStringAsFixed(2), subtitle: '+12.7% este mes', color: Colors.blueAccent, icon: Icons.attach_money)),
+                Expanded(child: MetricCard(title: 'Ingresos', val: '\$${totalVentas.toStringAsFixed(2)}', subtitle: '+12.7% este mes', color: Colors.blueAccent, icon: Icons.attach_money)),
               ],
             ),
             const SizedBox(height: 12),
@@ -310,7 +286,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ],
                                 ),
                                 Text(
-                                  tx['type'].toString() + ' · ' + tx['date'].toString(),
+                                  '${tx['type']} · ${tx['date']}',
                                   style: const TextStyle(fontSize: 10, color: Colors.grey),
                                 ),
                               ],
@@ -318,7 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                         Text(
-                          '\$' + tx['amount'].toString(),
+                          '\$${tx['amount']}',
                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14),
                         ),
                       ],
@@ -405,6 +381,7 @@ class _FormScreenState extends State<FormScreen> {
       'status': 'Activa',
       'date': DateTime.now().toString().substring(0, 10),
     });
+
     if (mounted) {
       Navigator.pop(context);
     }
@@ -463,7 +440,7 @@ class _FormScreenState extends State<FormScreen> {
                 backgroundColor: isV ? const Color(0xFF10b981) : const Color(0xFF3b82f6),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text('Guardar ' + widget.type, style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('Guardar ${widget.type}', style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

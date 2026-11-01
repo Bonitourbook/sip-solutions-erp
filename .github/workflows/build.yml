@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    env:
+      JAVA_VERSION: "17"
+      FLUTTER_VERSION: "3.19.5"
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,29 +25,72 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.5'
+          flutter-version: "3.19.5"
           channel: stable
           cache: true
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
-
-      - name: Install required Android SDK components
+      - name: Ensure Android mobile SDK is installed
+        shell: bash
         run: |
-          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          set -euxo pipefail
+          mkdir -p "$ANDROID_SDK_ROOT"
+
+          if [ ! -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ] &&
+             [ ! -x "$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager" ]; then
+            echo "Installing Android cmdline-tools..."
+            yes | sdkmanager --install "cmdline-tools;latest" || true
+          fi
+
+          if [ ! -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ] &&
+             [ ! -x "$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager" ]; then
+            echo "sdkmanager not found after install attempt"
+            ls -R "$ANDROID_SDK_ROOT" || true
+            exit 1
+          fi
+
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          if [ -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          elif [ -x "$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager" ]; then
+            yes | "$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager" --licenses >/dev/null || true
+          else
+            yes | sdkmanager --licenses >/dev/null || true
+          fi
+
+      - name: Install Android SDK for mobile app
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          SDKMANAGER_BIN="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER_BIN" ]; then
+            SDKMANAGER_BIN="$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager"
+          fi
+          if [ ! -x "$SDKMANAGER_BIN" ]; then
+            SDKMANAGER_BIN="$(command -v sdkmanager)"
+          fi
+
+          "$SDKMANAGER_BIN" --install \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0"
 
       - name: Check Flutter environment
         run: flutter doctor -v
 
-      - name: Get Flutter dependencies
+      - name: Install Flutter dependencies
         run: flutter pub get
 
       - name: Build release APK
@@ -50,6 +99,6 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: app-release-mobile
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error

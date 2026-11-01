@@ -68,6 +68,11 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0"
 
+      - name: Regenerate Android native structure
+        run: |
+          rm -rf android
+          flutter create . --platforms=android --org com.sipsolutions
+
       - name: Check Flutter environment
         run: flutter doctor -v
 
@@ -76,3 +81,9 @@ jobs:
 
       - name: Build release APK
         run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk

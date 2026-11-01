@@ -70,4 +70,16 @@ class ErpController {
     }
     return 0.0;
   }
+
+  Future<double> getPendingReceivablesTotal() async {
+    final db = await instance.database;
+    final res = await db.rawQuery(
+      "SELECT SUM(amount) as total FROM transactions WHERE type = 'COBRO' AND status LIKE '%Pendiente%'",
+    );
+
+    if (res.isNotEmpty && res.first['total'] != null) {
+      return (res.first['total'] as num).toDouble();
+    }
+    return 0.0;
+  }
 }

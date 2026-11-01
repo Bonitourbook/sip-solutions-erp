@@ -71,7 +71,7 @@ jobs:
       - name: Regenerate Android native structure
         run: |
           rm -rf android
-          flutter create . --platforms=android --org com.sipsolutions
+          flutter create . --platforms=android --org com.sipsolutions --project-name sip_solutions_erp --overwrite
 
       - name: Check Flutter environment
         run: flutter doctor -v

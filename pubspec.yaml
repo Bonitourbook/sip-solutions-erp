@@ -1,4 +1,4 @@
-name: sip_solutions_erp
+name: sip_solutions_erp_juan
 description: ERP nativo offline para Android con SQLite.
 publish_to: 'none'
 version: 1.0.0+1

@@ -37,14 +37,35 @@ class DatabaseHelper {
             date TEXT
           )
         ''');
-        await db.insert('transactions', {'type': 'VENTA', 'client': 'Olivia Chen (TechCorp)', 'client_type': 'Colaborador', 'amount': 3000.0, 'status': 'Vencida por 2 días', 'date': '2026-04-15'});
-        await db.insert('transactions', {'type': 'VENTA', 'client': 'Liam Brown (OmniSoft)', 'client_type': 'Cliente Final', 'amount': 3200.0, 'status': '¡Vence Hoy!', 'date': '2026-04-20'});
-        await db.insert('transactions', {'type': 'COMPRA', 'client': 'Proveedor Central', 'client_type': 'Proveedor', 'amount': 15000.0, 'status': 'Completada', 'date': '2026-04-10'});
+        await db.insert('transactions', {
+          'type': 'VENTA',
+          'client': 'Olivia Chen (TechCorp)',
+          'client_type': 'Colaborador',
+          'amount': 3000.0,
+          'status': 'Vencida por 2 días',
+          'date': '2026-04-15',
+        });
+        await db.insert('transactions', {
+          'type': 'VENTA',
+          'client': 'Liam Brown (OmniSoft)',
+          'client_type': 'Cliente Final',
+          'amount': 3200.0,
+          'status': '¡Vence Hoy!',
+          'date': '2026-04-20',
+        });
+        await db.insert('transactions', {
+          'type': 'COMPRA',
+          'client': 'Proveedor Central',
+          'client_type': 'Proveedor',
+          'amount': 15000.0,
+          'status': 'Completada',
+          'date': '2026-04-10',
+        });
       },
     );
   }
 
-  Future<List>> getTransactions() async {
+  Future<List<Map<String, dynamic>>> getTransactions() async {
     final db = await instance.database;
     return await db.query('transactions', orderBy: 'id DESC');
   }
@@ -56,7 +77,10 @@ class DatabaseHelper {
 
   Future<double> getSum(String type) async {
     final db = await instance.database;
-    final res = await db.rawQuery('SELECT SUM(amount) as total FROM transactions WHERE type = ?', [type]);
+    final res = await db.rawQuery(
+      'SELECT SUM(amount) as total FROM transactions WHERE type = ?',
+      [type],
+    );
     if (res.isNotEmpty && res.first['total'] != null) {
       return (res.first['total'] as num).toDouble();
     }
@@ -93,7 +117,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   double totalVentas = 0.0;
   double totalCompras = 0.0;
-  List> items = [];
+  List<Map<String, dynamic>> items = [];
 
   @override
   void initState() {
@@ -105,9 +129,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final v = await DatabaseHelper.instance.getSum('VENTA');
     final c = await DatabaseHelper.instance.getSum('COMPRA');
     final list = await DatabaseHelper.instance.getTransactions();
+
+    if (!mounted) return;
+
     setState(() {
       totalVentas = v;
-      compras = c;
+      totalCompras = c;
       items = list;
     });
   }
@@ -161,7 +188,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Icon(Icons.error_outline, color: Colors.red, size: 20),
                       SizedBox(width: 8),
-                      Text('1 Deuda(s) Vencida(s) · Cobrar \$7,550', style: TextStyle(fontSize: 12, color: Colors.redAccent)),
+                      Text('1 Deuda(s) Vencida(s) · Cobrar \$7550', style: TextStyle(fontSize: 12, color: Colors.redAccent)),
                     ],
                   ),
                   Text('Exportar', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
@@ -174,7 +201,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(type: 'VENTA')));
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const FormScreen(type: 'VENTA')),
+                      );
                       refresh();
                     },
                     icon: const Icon(Icons.point_of_sale, size: 22),
@@ -191,7 +221,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(type: 'COMPRA')));
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const FormScreen(type: 'COMPRA')),
+                      );
                       refresh();
                     },
                     icon: const Icon(Icons.shopping_cart_outlined, size: 22),
@@ -245,7 +278,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             CircleAvatar(
                               radius: 15,
                               backgroundColor: tx['type'] == 'VENTA' ? Colors.green.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
-                              child: Icon(tx['type'] == 'VENTA' ? Icons.arrow_downward : Icons.arrow_upward, color: tx['type'] == 'VENTA' ? Colors.greenAccent : Colors.blueAccent, size: 14),
+                              child: Icon(
+                                tx['type'] == 'VENTA' ? Icons.arrow_downward : Icons.arrow_upward,
+                                color: tx['type'] == 'VENTA' ? Colors.greenAccent : Colors.blueAccent,
+                                size: 14,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Column(
@@ -262,16 +299,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           color: tx['client_type'] == 'Colaborador' ? Colors.purple.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
-                                        child: Text(tx['client_type'].toString(), style: TextStyle(fontSize: 9, color: tx['client_type'] == 'Colaborador' ? Colors.purpleAccent : Colors.white70)),
+                                        child: Text(
+                                          tx['client_type'].toString(),
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            color: tx['client_type'] == 'Colaborador' ? Colors.purpleAccent : Colors.white70,
+                                          ),
+                                        ),
                                       ),
                                   ],
                                 ),
-                                Text(tx['type'].toString() + ' · ' + tx['date'].toString(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                Text(
+                                  tx['type'].toString() + ' · ' + tx['date'].toString(),
+                                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                ),
                               ],
                             ),
                           ],
                         ),
-                        Text('\$' + tx['amount'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14)),
+                        Text(
+                          '\$' + tx['amount'].toString(),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14),
+                        ),
                       ],
                     ),
                   )),
@@ -292,7 +341,14 @@ class MetricCard extends StatelessWidget {
   final Color color;
   final IconData icon;
 
-  const MetricCard({super.key, required this.title, required this.val, required this.subtitle, required this.color, required this.icon});
+  const MetricCard({
+    super.key,
+    required this.title,
+    required this.val,
+    required this.subtitle,
+    required this.color,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -349,25 +405,39 @@ class _FormScreenState extends State<FormScreen> {
       'status': 'Activa',
       'date': DateTime.now().toString().substring(0, 10),
     });
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isV = widget.type == 'VENTA';
     return Scaffold(
-      appBar: AppBar(title: Text(isV ? 'Registrar Nueva Venta' : 'Registrar Nueva Compra'), backgroundColor: const Color(0xFF111827)),
+      appBar: AppBar(
+        title: Text(isV ? 'Registrar Nueva Venta' : 'Registrar Nueva Compra'),
+        backgroundColor: const Color(0xFF111827),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(controller: clientC, decoration: const InputDecoration(labelText: 'Nombre / Razon Social', border: OutlineInputBorder())),
+            TextField(
+              controller: clientC,
+              decoration: const InputDecoration(
+                labelText: 'Nombre / Razon Social',
+                border: OutlineInputBorder(),
+              ),
+            ),
             const SizedBox(height: 16),
             if (isV) ...[
               DropdownButtonFormField<String>(
                 value: clientType,
-                decoration: const InputDecoration(labelText: 'Tipo de Comprador', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de Comprador',
+                  border: OutlineInputBorder(),
+                ),
                 items: const [
                   DropdownMenuItem(value: 'Cliente Final', child: Text('Cliente Final (Precio Normal)')),
                   DropdownMenuItem(value: 'Colaborador', child: Text('Colaborador (Precio Diferenciado)')),
@@ -378,7 +448,14 @@ class _FormScreenState extends State<FormScreen> {
               ),
               const SizedBox(height: 16),
             ],
-            TextField(controller: amountC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Monto Total (\$)', border: OutlineInputBorder())),
+            TextField(
+              controller: amountC,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Monto Total (\$)',
+                border: OutlineInputBorder(),
+              ),
+            ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: save,

@@ -40,12 +40,6 @@ class ErpController {
     );
   }
 
-  Future<List<TransactionModel>> getTransactions() async {
-    final db = await instance.database;
-    final result = await db.query('transactions', orderBy: 'id DESC');
-    return result.map((json) => TransactionModel.fromMap(json)).toList();
-  }
-
   Future<int> insertTransaction(TransactionModel transaction) async {
     final db = await instance.database;
     return await db.insert(
@@ -53,6 +47,44 @@ class ErpController {
       transaction.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<int> updateTransaction(TransactionModel transaction) async {
+    final db = await instance.database;
+    if (transaction.id == null) {
+      throw Exception('No se puede actualizar una transacción sin id');
+    }
+
+    return await db.update(
+      'transactions',
+      transaction.toMap(),
+      where: 'id = ?',
+      whereArgs: [transaction.id],
+    );
+  }
+
+  Future<int> deleteTransaction(int id) async {
+    final db = await instance.database;
+    return await db.delete(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<TransactionModel>> getTransactions([String? typeFilter]) async {
+    final db = await instance.database;
+
+    final result = typeFilter == null
+        ? await db.query('transactions', orderBy: 'id DESC')
+        : await db.query(
+            'transactions',
+            where: 'type = ?',
+            whereArgs: [typeFilter],
+            orderBy: 'id DESC',
+          );
+
+    return result.map((json) => TransactionModel.fromMap(json)).toList();
   }
 
   Future<double> getSum(String type) async {
@@ -65,6 +97,106 @@ class ErpController {
     if (res.isNotEmpty && res.first['total'] != null) {
       return (res.first['total'] as num).toDouble();
     }
+
     return 0.0;
+  }
+
+  Future<double> getTotalByStatus(String status) async {
+    final db = await instance.database;
+    final res = await db.rawQuery(
+      'SELECT SUM(amount) as total FROM transactions WHERE status = ?',
+      [status],
+    );
+
+    if (res.isNotEmpty && res.first['total'] != null) {
+      return (res.first['total'] as num).toDouble();
+    }
+
+    return 0.0;
+  }
+
+  Future<double> getTotalPaidByType(String type) async {
+    final db = await instance.database;
+    final res = await db.rawQuery(
+      'SELECT SUM(paid_amount) as total FROM transactions WHERE type = ?',
+      [type],
+    );
+
+    if (res.isNotEmpty && res.first['total'] != null) {
+      return (res.first['total'] as num).toDouble();
+    }
+
+    return 0.0;
+  }
+
+  Future<double> getPendingBalance() async {
+    final db = await instance.database;
+    final res = await db.rawQuery(
+      'SELECT SUM(amount - paid_amount) as total FROM transactions WHERE status != ?',
+      ['Pagada'],
+    );
+
+    if (res.isNotEmpty && res.first['total'] != null) {
+      return (res.first['total'] as num).toDouble();
+    }
+
+    return 0.0;
+  }
+
+  Future<double> getGrossProfit() async {
+    final totalSales = await getSum('VENTA');
+    final totalPurchases = await getSum('COMPRA');
+    return totalSales - totalPurchases;
+  }
+
+  Future<double> getProfitMargin() async {
+    final totalSales = await getSum('VENTA');
+    if (totalSales <= 0) return 0.0;
+
+    final grossProfit = await getGrossProfit();
+    return (grossProfit / totalSales) * 100;
+  }
+
+  Future<Map<String, dynamic>> getBusinessSummary() async {
+    final totalSales = await getSum('VENTA');
+    final totalPurchases = await getSum('COMPRA');
+    final totalCash = await getTotalPaidByType('COBRO');
+    final pending = await getPendingBalance();
+    final profit = await getGrossProfit();
+
+    return {
+      'sales': totalSales,
+      'purchases': totalPurchases,
+      'cash': totalCash,
+      'pending': pending,
+      'profit': profit,
+      'margin': await getProfitMargin(),
+    };
+  }
+
+  Future<Map<String, dynamic>> getStockSummary() async {
+    final db = await instance.database;
+
+    final salesCount = await db.rawQuery(
+      'SELECT COUNT(*) as total FROM transactions WHERE type = ?',
+      ['VENTA'],
+    );
+
+    final deliveryCount = await db.rawQuery(
+      'SELECT COUNT(*) as total FROM transactions WHERE has_delivery = 1',
+      [],
+    );
+
+    final pendingCount = await db.rawQuery(
+      'SELECT COUNT(*) as total FROM transactions WHERE status != ?',
+      ['Pagada'],
+    );
+
+    return {
+      'salesTransactions': (salesCount.first['total'] ?? 0) as int,
+      'deliveryTransactions': (deliveryCount.first['total'] ?? 0) as int,
+      'pendingTransactions': (pendingCount.first['total'] ?? 0) as int,
+      'pendingBalance': await getPendingBalance(),
+    };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controllers/erp_controller.dart';
 import '../models/transaction_model.dart';
+import 'form_screen.dart';
 
 class GenericModuleView extends StatefulWidget {
   final String moduleTitle;
@@ -19,7 +20,6 @@ class GenericModuleView extends StatefulWidget {
 class _GenericModuleViewState extends State<GenericModuleView> {
   List<TransactionModel> items = [];
   bool isLoading = true;
-  String? errorMessage;
 
   @override
   void initState() {
@@ -29,43 +29,50 @@ class _GenericModuleViewState extends State<GenericModuleView> {
 
   Future<void> loadModuleData() async {
     if (!mounted) return;
-
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
+    setState(() => isLoading = true);
 
     try {
       final list = await ErpController.instance.getTransactions(widget.filterType);
-
       if (!mounted) return;
-
-      setState(() {
-        items = list;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        errorMessage = 'No se pudieron cargar los registros.';
-      });
+      setState(() => items = list);
     } finally {
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => isLoading = false);
       }
     }
+  }
+
+  String _moduleType() {
+    final title = widget.moduleTitle.toLowerCase();
+    if (title.contains('stock')) return 'COMPRA';
+    if (title.contains('kardex')) return 'VENTA';
+    if (title.contains('clientes')) return 'VENTA';
+    return 'VENTA';
+  }
+
+  void _openNewForm() {
+    final type = _moduleType();
+    final title = type == 'COMPRA' ? 'Nuevo Producto' : 'Registrar Venta';
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FormScreen(title: title, type: type),
+      ),
+    ).then((_) => loadModuleData());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF05080F),
       appBar: AppBar(
         title: Text(widget.moduleTitle),
         backgroundColor: const Color(0xFF111827),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: loadModuleData,
           ),
         ],
@@ -73,7 +80,7 @@ class _GenericModuleViewState extends State<GenericModuleView> {
       body: RefreshIndicator(
         onRefresh: loadModuleData,
         child: isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
             : items.isEmpty
                 ? Center(
                     child: Text(
@@ -145,6 +152,12 @@ class _GenericModuleViewState extends State<GenericModuleView> {
                     },
                   ),
       ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF3b82f6),
+        onPressed: _openNewForm,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }
+

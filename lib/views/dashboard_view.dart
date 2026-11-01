@@ -16,7 +16,6 @@ class _DashboardViewState extends State<DashboardView> {
   double totalCompras = 0.0;
   List<TransactionModel> items = [];
   bool isLoading = true;
-  String? errorMessage;
 
   @override
   void initState() {
@@ -26,11 +25,7 @@ class _DashboardViewState extends State<DashboardView> {
 
   Future<void> loadData() async {
     if (!mounted) return;
-
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
+    setState(() => isLoading = true);
 
     try {
       final results = await Future.wait([
@@ -40,27 +35,19 @@ class _DashboardViewState extends State<DashboardView> {
       ]);
 
       if (!mounted) return;
-
       setState(() {
         totalVentas = results[0] as double;
         totalCompras = results[1] as double;
         items = results[2] as List<TransactionModel>;
       });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        errorMessage = 'No se pudieron cargar los datos. Intenta nuevamente.';
-      });
     } finally {
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => isLoading = false);
       }
     }
   }
 
-  void _openModule(String title, String? filterType) {
+  void _openModule(String title, {String? filterType}) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -69,16 +56,16 @@ class _DashboardViewState extends State<DashboardView> {
           filterType: filterType,
         ),
       ),
-    );
+    ).then((_) => loadData());
   }
 
   void _showQuickActions(BuildContext context) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.7),
-      builder: (context) {
+      barrierColor: Colors.black.withOpacity(0.72),
+      builder: (_) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
           backgroundColor: Colors.transparent,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
@@ -102,16 +89,16 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
                 const SizedBox(height: 18),
                 _quickActionTile(
-                  icon: Icons.receipt_long_rounded,
+                  icon: Icons.shopping_cart_rounded,
                   iconColor: Colors.redAccent,
-                  label: 'Nueva Cuenta por Cobrar',
+                  label: 'Nueva Venta',
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const FormScreen(
-                          title: 'Nueva Cuenta por Cobrar',
+                          title: 'Registrar Venta',
                           type: 'VENTA',
                         ),
                       ),
@@ -120,7 +107,7 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
                 const SizedBox(height: 12),
                 _quickActionTile(
-                  icon: Icons.shopping_cart_rounded,
+                  icon: Icons.receipt_long_rounded,
                   iconColor: Colors.greenAccent,
                   label: 'Registrar Venta',
                   onTap: () {
@@ -184,8 +171,8 @@ class _DashboardViewState extends State<DashboardView> {
       color: const Color(0xFF1F2A3B),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -221,7 +208,6 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final deuda = totalVentas * 0.3;
-    final rentabilidad = totalVentas - totalCompras;
 
     return Scaffold(
       backgroundColor: const Color(0xFF05080F),
@@ -242,14 +228,12 @@ class _DashboardViewState extends State<DashboardView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _headerGemini(),
+                              _header(),
                               const SizedBox(height: 20),
                               _alertBanner(
                                 text: '1 Deuda(s) Vencida(s) • Cobrar \$${deuda.toStringAsFixed(0)}',
                                 accent: Colors.redAccent,
-                                showAction: true,
-                                actionLabel: 'Exportar',
-                                onActionTap: () => _openModule('Cobros', 'COBRO'),
+                                onActionTap: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
                               ),
                               const SizedBox(height: 16),
                               Row(
@@ -263,6 +247,7 @@ class _DashboardViewState extends State<DashboardView> {
                                       accent: Colors.redAccent,
                                       icon: Icons.warning_amber_rounded,
                                       iconColor: Colors.redAccent,
+                                      onTap: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -274,6 +259,7 @@ class _DashboardViewState extends State<DashboardView> {
                                       accent: Colors.greenAccent,
                                       icon: Icons.trending_up_rounded,
                                       iconColor: Colors.greenAccent,
+                                      onTap: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
                                     ),
                                   ),
                                 ],
@@ -289,6 +275,7 @@ class _DashboardViewState extends State<DashboardView> {
                                       accent: Colors.blueAccent,
                                       icon: Icons.inventory_2_rounded,
                                       iconColor: Colors.blueAccent,
+                                      onTap: () => _openModule('ERP Juan - Stock', filterType: 'COMPRA'),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -300,6 +287,7 @@ class _DashboardViewState extends State<DashboardView> {
                                       accent: Colors.orangeAccent,
                                       icon: Icons.warning_amber_rounded,
                                       iconColor: Colors.orangeAccent,
+                                      onTap: () => _openModule('ERP Juan - Stock', filterType: 'COMPRA'),
                                     ),
                                   ),
                                 ],
@@ -308,51 +296,57 @@ class _DashboardViewState extends State<DashboardView> {
                               _sectionTitle(),
                               const SizedBox(height: 10),
                               if (items.isEmpty)
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF111827),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.white10),
-                                  ),
-                                  child: const Text(
-                                    'No hay registros para mostrar.',
-                                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                                GestureDetector(
+                                  onTap: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF111827),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: Colors.white10),
+                                    ),
+                                    child: const Text(
+                                      'No hay registros para mostrar.',
+                                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                                    ),
                                   ),
                                 )
                               else
                                 ...items.take(3).map(
-                                  (tx) => Container(
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF111827),
-                                      borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: Colors.white10),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            '${tx.client} • ${tx.paymentMode}',
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
+                                  (tx) => GestureDetector(
+                                    onTap: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 10),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF111827),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: Colors.white10),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '${tx.client} • ${tx.paymentMode}',
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        Text(
-                                          '\$${tx.amount.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            color: tx.amount >= 0 ? Colors.greenAccent : Colors.redAccent,
-                                            fontWeight: FontWeight.w700,
+                                          Text(
+                                            '\$${tx.amount.toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              color: tx.amount >= 0 ? Colors.greenAccent : Colors.redAccent,
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -400,7 +394,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _headerGemini() {
+  Widget _header() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -423,7 +417,7 @@ class _DashboardViewState extends State<DashboardView> {
             ),
             const SizedBox(width: 12),
             const Text(
-              'Gemini',
+              'ERP Juan',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -432,18 +426,39 @@ class _DashboardViewState extends State<DashboardView> {
             ),
           ],
         ),
-        GestureDetector(
-          onTap: () => _showQuickActions(context),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFF111827),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white10),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111827),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: const Text(
+                'Por Juan',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-            child: const Icon(Icons.add, color: Colors.white, size: 28),
-          ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showQuickActions(context),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 28),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -452,8 +467,6 @@ class _DashboardViewState extends State<DashboardView> {
   Widget _alertBanner({
     required String text,
     required Color accent,
-    required bool showAction,
-    required String actionLabel,
     required VoidCallback onActionTap,
   }) {
     return Container(
@@ -485,14 +498,13 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
           ),
-          if (showAction)
-            TextButton(
-              onPressed: onActionTap,
-              child: Text(
-                actionLabel,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-              ),
+          TextButton(
+            onPressed: onActionTap,
+            child: const Text(
+              'Exportar',
+              style: TextStyle(color: Colors.white, fontSize: 12),
             ),
+          ),
         ],
       ),
     );
@@ -506,71 +518,75 @@ class _DashboardViewState extends State<DashboardView> {
     required Color accent,
     required IconData icon,
     required Color iconColor,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111827),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111827),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 18),
                 ),
-                child: Icon(icon, color: iconColor, size: 18),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              color: accent,
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              height: 1.1,
+              ],
             ),
-          ),
-          const SizedBox(height: 6),
-          if (subtitle.isNotEmpty)
+            const SizedBox(height: 12),
             Text(
-              subtitle,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 11,
+              value,
+              style: TextStyle(
+                color: accent,
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
               ),
             ),
-          if (subValue != null && subValue.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                subValue,
-                style: TextStyle(
-                  color: accent,
+            const SizedBox(height: 6),
+            if (subtitle.isNotEmpty)
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Colors.white70,
                   fontSize: 11,
-                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
-        ],
+            if (subValue != null && subValue.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  subValue,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -595,7 +611,7 @@ class _DashboardViewState extends State<DashboardView> {
           ],
         ),
         TextButton(
-          onPressed: () => _openModule('Cobros', 'COBRO'),
+          onPressed: () => _openModule('ERP Juan - Cobros', filterType: 'VENTA'),
           child: const Text('Ver Todo', style: TextStyle(color: Colors.white70, fontSize: 12)),
         ),
       ],
@@ -630,14 +646,21 @@ class _DashboardViewState extends State<DashboardView> {
   }) {
     return GestureDetector(
       onTap: () {
-        if (label == 'Cobros') {
-          _openModule('Cobros', 'COBRO');
-        } else if (label == 'Stock') {
-          _openModule('Stock', 'PRODUCTO');
-        } else if (label == 'Kardex') {
-          _openModule('Kardex', 'PRODUCTO');
-        } else if (label == 'Clientes') {
-          _openModule('Clientes', null);
+        switch (label) {
+          case 'Cobros':
+            _openModule('ERP Juan - Cobros', filterType: 'VENTA');
+            break;
+          case 'Stock':
+            _openModule('ERP Juan - Stock', filterType: 'COMPRA');
+            break;
+          case 'Kardex':
+            _openModule('ERP Juan - Kardex', filterType: null);
+            break;
+          case 'Clientes':
+            _openModule('ERP Juan - Clientes', filterType: 'VENTA');
+            break;
+          default:
+            break;
         }
       },
       child: Column(
@@ -670,7 +693,7 @@ class _DashboardViewState extends State<DashboardView> {
           const SizedBox(width: 14),
           const Expanded(
             child: Text(
-              'gemini.google.com',
+              'erpjuan.app',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -711,3 +734,4 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 }
+

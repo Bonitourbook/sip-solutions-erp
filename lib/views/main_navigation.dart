@@ -16,7 +16,7 @@ class _MainNavigationState extends State<MainNavigation> {
     const DashboardView(),
     const GenericModuleView(
       moduleTitle: 'ERP Juan - Cobros',
-      filterType: null,
+      filterType: 'VENTA',
     ),
     const GenericModuleView(
       moduleTitle: 'ERP Juan - Stock',
@@ -24,11 +24,11 @@ class _MainNavigationState extends State<MainNavigation> {
     ),
     const GenericModuleView(
       moduleTitle: 'ERP Juan - Kardex',
-      filterType: null,
+      filterType: 'VENTA',
     ),
     const GenericModuleView(
       moduleTitle: 'ERP Juan - Clientes',
-      filterType: null,
+      filterType: 'VENTA',
     ),
   ];
 
@@ -39,7 +39,7 @@ class _MainNavigationState extends State<MainNavigation> {
       body: SafeArea(child: _screens[_currentIndex]),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          color: const Color(0xFF0b0f19),
+          color: Color(0xFF0b0f19),
           border: Border(top: BorderSide(color: Colors.white12)),
         ),
         child: BottomNavigationBar(
@@ -65,3 +65,4 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
+

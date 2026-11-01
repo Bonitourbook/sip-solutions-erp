@@ -68,11 +68,11 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0"
 
-      - name: Asegurar nombre de la app en AndroidManifest
+      - name: Regenerar estructura nativa de Android compatible
         run: |
-          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
-            sed -i 's/android:label="[^"]*"/android:label="ERP Juan"/g' android/app/src/main/AndroidManifest.xml
-          fi
+          rm -rf android
+          flutter create . --platforms=android --org com.erpjuan --project-name erp_juan --overwrite
+          sed -i 's/android:label="[^"]*"/android:label="ERP Juan"/g' android/app/src/main/AndroidManifest.xml
 
       - name: Check Flutter environment
         run: flutter doctor -v

@@ -22,34 +22,96 @@ class _FormScreenState extends State<FormScreen> {
 
   final List<double> presetAmounts = [50.0, 100.0, 500.0, 1000.0];
 
+  bool get isVenta => widget.type == 'VENTA';
+  bool get isCobro => widget.type == 'COBRO';
+  bool get isCompra => widget.type == 'COMPRA';
+  bool get isProducto => widget.type == 'PRODUCTO';
+
   void save() async {
     final client = clientC.text.trim();
     final amount = double.tryParse(amountC.text) ?? 0.0;
-    final paidAmount = paymentMode == 'Contado'
-        ? amount
-        : (paymentMode == 'Crédito' ? 0.0 : (double.tryParse(paidC.text) ?? 0.0));
 
     if (client.isEmpty || amount <= 0) return;
 
-    final newTx = TransactionModel(
-      type: widget.type,
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+
+    if (isCobro) {
+      final debt = TransactionModel(
+        type: 'COBRO',
+        client: client,
+        clientType: 'General',
+        amount: amount,
+        paidAmount: 0.0,
+        paymentMode: 'Crédito',
+        hasDelivery: hasDelivery,
+        status: 'Pendiente / Crédito',
+        date: today,
+      );
+
+      await ErpController.instance.insertTransaction(debt);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
+    if (isVenta) {
+      final paidAmount = paymentMode == 'Contado'
+          ? amount
+          : (paymentMode == 'Crédito' ? 0.0 : (double.tryParse(paidC.text) ?? 0.0));
+
+      final sale = TransactionModel(
+        type: 'VENTA',
+        client: client,
+        clientType: clientType,
+        amount: amount,
+        paidAmount: paidAmount,
+        paymentMode: paymentMode,
+        hasDelivery: hasDelivery,
+        status: paidAmount < amount ? 'Pendiente / Crédito' : 'Completada',
+        date: today,
+      );
+
+      await ErpController.instance.insertTransaction(sale);
+
+      final pendingDebt = amount - paidAmount;
+      if (pendingDebt > 0) {
+        final debt = TransactionModel(
+          type: 'COBRO',
+          client: client,
+          clientType: clientType,
+          amount: pendingDebt,
+          paidAmount: paidAmount,
+          paymentMode: paymentMode,
+          hasDelivery: hasDelivery,
+          status: 'Pendiente / Crédito',
+          date: today,
+        );
+        await ErpController.instance.insertTransaction(debt);
+      }
+
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
+    final purchase = TransactionModel(
+      type: isCompra ? 'COMPRA' : 'PRODUCTO',
       client: client,
-      clientType: widget.type == 'VENTA' ? clientType : 'General',
+      clientType: 'General',
       amount: amount,
-      paidAmount: paidAmount,
-      paymentMode: paymentMode,
-      hasDelivery: hasDelivery,
-      status: paidAmount < amount ? 'Pendiente / Crédito' : 'Completada',
-      date: DateTime.now().toString().substring(0, 10),
+      paidAmount: amount,
+      paymentMode: 'Contado',
+      hasDelivery: false,
+      status: 'Completada',
+      date: today,
     );
 
-    await ErpController.instance.insertTransaction(newTx);
+    await ErpController.instance.insertTransaction(purchase);
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isVenta = widget.type == 'VENTA' || widget.type == 'COBRO';
+    final isSaleFlow = isVenta || isCobro;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -65,7 +127,7 @@ class _FormScreenState extends State<FormScreen> {
               controller: clientC,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                labelText: widget.type == 'PRODUCTO' ? 'Nombre del Producto' : 'Cliente / Razón Social',
+                labelText: isProducto || isCompra ? 'Nombre del Producto / Proveedor' : 'Cliente / Razón Social',
                 labelStyle: const TextStyle(color: Colors.grey),
                 filled: true,
                 fillColor: const Color(0xFF111827),
@@ -73,7 +135,7 @@ class _FormScreenState extends State<FormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (widget.type == 'VENTA') ...[
+            if (isVenta) ...[
               DropdownButtonFormField<String>(
                 value: clientType,
                 dropdownColor: const Color(0xFF111827),
@@ -118,7 +180,7 @@ class _FormScreenState extends State<FormScreen> {
               )).toList(),
             ),
             const SizedBox(height: 16),
-            if (isVenta) ...[
+            if (isVenta || isCobro) ...[
               DropdownButtonFormField<String>(
                 value: paymentMode,
                 dropdownColor: const Color(0xFF111827),
@@ -137,7 +199,7 @@ class _FormScreenState extends State<FormScreen> {
                 ],
                 onChanged: (val) => setState(() => paymentMode = val ?? 'Contado'),
               ),
-              if (paymentMode == 'Mixto') ...[
+              if (paymentMode == 'Mixto' && isVenta) ...[
                 const SizedBox(height: 16),
                 TextField(
                   controller: paidC,

@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const SipSolutionsApp());
+  runApp(SipSolutionsApp());
 }
 
 class SipSolutionsApp extends StatelessWidget {
-  const SipSolutionsApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -15,10 +13,10 @@ class SipSolutionsApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0b0f19),
-        primaryColor: const Color(0xFF3b82f6),
+        scaffoldBackgroundColor: Color(0xFF0b0f19),
+        primaryColor: Color(0xFF3b82f6),
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }

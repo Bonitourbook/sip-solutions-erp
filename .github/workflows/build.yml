@@ -74,14 +74,100 @@ jobs:
           flutter create . --platforms=android --org com.erpjuan --project-name erp_juan --overwrite
           sed -i 's/android:label="[^"]*"/android:label="ERP Juan"/g' android/app/src/main/AndroidManifest.xml
 
-      - name: Write custom main.dart for ERP Juan
+      - name: Write pubspec.yaml with database support
+        run: |
+          cat << 'EOF' > pubspec.yaml
+          name: erp_juan
+          description: "ERP Juan - Sistema de Gestion Comercial y Operativa"
+          publish_to: 'none'
+          version: 1.0.0+1
+
+          environment:
+            sdk: '>=3.3.0 <4.0.0'
+
+          dependencies:
+            flutter:
+              sdk: flutter
+            sqflite: ^2.3.2
+            path: ^1.9.0
+            intl: ^0.19.0
+
+          dev_dependencies:
+            flutter_test:
+              sdk: flutter
+            flutter_lints: ^3.0.0
+
+          flutter:
+            uses-material-design: true
+          EOF
+
+      - name: Write full functional and complex main.dart
         run: |
           mkdir -p lib
           cat << 'EOF' > lib/main.dart
           import 'package:flutter/material.dart';
+          import 'package:path/path.dart';
+          import 'package:sqflite/sqflite.dart';
 
           void main() {
+            WidgetsFlutterBinding.ensureInitialized();
             runApp(const ErpJuanApp());
+          }
+
+          class DatabaseHelper {
+            static final DatabaseHelper instance = DatabaseHelper._init();
+            static Database? _database;
+
+            DatabaseHelper._init();
+
+            Future<Database> get database async {
+              if (_database != null) return _database!;
+              _database = await _initDB('erp_juan_v2.db');
+              return _database!;
+            }
+
+            Future<Database> _initDB(String filePath) async {
+              final dbPath = await getDatabasesPath();
+              final path = join(dbPath, filePath);
+              return await openDatabase(
+                path,
+                version: 1,
+                onCreate: (db, version) async {
+                  await db.execute('''
+                    CREATE TABLE transactions (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      type TEXT NOT NULL,
+                      client TEXT NOT NULL,
+                      amount REAL NOT NULL,
+                      status TEXT NOT NULL,
+                      date TEXT NOT NULL
+                    )
+                  ''');
+                  // Datos iniciales de prueba para ver el panel completo
+                  await db.insert('transactions', {'type': 'VENTA', 'client': 'Olivia Chen (TechCorp)', 'amount': 3000.0, 'status': 'Vencida', 'date': '2026-04-15'});
+                  await db.insert('transactions', {'type': 'VENTA', 'client': 'Liam Brown (OmniSoft)', 'amount': 4550.0, 'status': 'Pendiente', 'date': '2026-04-20'});
+                },
+              );
+            }
+
+            Future<List>> getTransactions() async {
+              final db = await instance.database;
+              return await db.query('transactions', orderBy: 'id DESC');
+            }
+
+            Future<int> insertTransaction(Map<String, dynamic> row) async {
+              final db = await instance.database;
+              return await db.insert('transactions', row);
+            }
+
+            Future<double> getTotalByType(String type) async {
+              final db = await instance.database;
+              final result = await db.rawQuery('SELECT SUM(amount) as total FROM transactions WHERE type = ?', [type]);
+              if (result.isNotEmpty && result.first['total'] != null) {
+                return (result.first['total'] as num).toDouble();
+              }
+              return 0.0;
+            }
           }
 
           class ErpJuanApp extends StatelessWidget {
@@ -96,74 +182,315 @@ jobs:
                   brightness: Brightness.dark,
                   scaffoldBackgroundColor: const Color(0xFF0b0f19),
                   primaryColor: const Color(0xFF3b82f6),
+                  cardColor: const Color(0xFF111827),
                 ),
-                home: const HomeScreen(),
+                home: const DashboardScreen(),
               );
             }
           }
 
-          class HomeScreen extends StatelessWidget {
-            const HomeScreen({super.key});
+          class DashboardScreen extends StatefulWidget {
+            const DashboardScreen({super.key});
+
+            @override
+            State<DashboardScreen> createState() => _DashboardScreenState();
+          }
+
+          class _DashboardScreenState extends State<DashboardScreen> {
+            double totalVentas = 0.0;
+            double totalCompras = 0.0;
+            List> transactions = [];
+
+            @override
+            void initState() {
+              super.initState();
+              _loadData();
+            }
+
+            Future<void> _loadData() async {
+              final ventas = await DatabaseHelper.instance.getTotalByType('VENTA');
+              final compras = await DatabaseHelper.instance.getTotalByType('COMPRA');
+              final txs = await DatabaseHelper.instance.getTransactions();
+              setState(() {
+                totalVentas = ventas;
+                totalCompras = compras;
+                transactions = txs;
+              });
+            }
 
             @override
             Widget build(BuildContext context) {
               return Scaffold(
                 appBar: AppBar(
-                  title: const Text('ERP Juan'),
-                  backgroundColor: const Color(0xFF111827),
+                  backgroundColor: const Color(0xFF0b0f19),
                   elevation: 0,
+                  title: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3b82f6),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text('EJ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('ERP Juan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 11, color: Colors.green)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: _loadData,
+                    ),
+                  ],
+                ),
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Alerta de Deudas / Morosidad
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1f161a),
+                          border: Border.all(color: Colors.red.withOpacity(0.4)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Row(
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red, size: 20),
+                                SizedBox(width: 8),
+                                Text('1 Deuda(s) Vencida(s) · Cobrar \$3,000', style: TextStyle(fontSize: 12, color: Colors.redAccent)),
+                              ],
+                            ),
+                            Text('Exportar', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Botones Protagonistas de Motor (Nueva Venta y Nueva Compra)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const NewTransactionScreen(type: 'VENTA')),
+                                );
+                                _loadData();
+                              },
+                              icon: const Icon(Icons.point_of_sale, size: 22),
+                              label: const Text('Nueva Venta', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10b981),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const NewTransactionScreen(type: 'COMPRA')),
+                                );
+                                _loadData();
+                              },
+                              icon: const Icon(Icons.shopping_cart_outlined, size: 22),
+                              label: const Text('Nueva Compra', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3b82f6),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Tarjetas de Métricas de Negocio (Grid)
+                      Row(
+                        children: [
+                          Expanded(child: _buildMetricCard('Por Cobrar', '\$7,550.00', '1 Vencidas (\$3000)', Colors.redAccent, Icons.schedule)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildMetricCard('Ingresos Venta', '\$${totalVentas.toStringAsFixed(2)}', '+12.7% este mes', Colors.blueAccent, Icons.attach_money)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(child: _buildMetricCard('Valor Stock', '\$54,450', 'En inventario activo', Colors.blueGrey, Icons.inventory_2)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildMetricCard('Stock Bajo', '2 Prod.', 'Requieren reposición', Colors.orangeAccent, Icons.warning_amber)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Listado de Operaciones y Vencimientos
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF111827),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Registro Operativo y Cuentas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const SizedBox(height: 12),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: transactions.length,
+                              itemBuilder: (context, index) {
+                                final tx = transactions[index];
+                                final isVenta = tx['type'] == 'VENTA';
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 16,
+                                            backgroundColor: isVenta ? Colors.green.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                                            child: Icon(isVenta ? Icons.arrow_downward : Icons.arrow_upward, color: isVenta ? Colors.greenAccent : Colors.blueAccent, size: 16),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(tx['client'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                              Text('${tx['type']} · ${tx['date']}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        '\$${tx['amount'].toStringAsFixed(2)}',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            Widget _buildMetricCard(String title, String value, String subtitle, Color accentColor, IconData icon) {
+              return Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Icon(icon, color: accentColor, size: 16),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: TextStyle(fontSize: 10, color: accentColor)),
+                  ],
+                ),
+              );
+            }
+          }
+
+          class NewTransactionScreen extends StatefulWidget {
+            final String type;
+            const NewTransactionScreen({super.key, required this.type});
+
+            @override
+            State<NewTransactionScreen> createState() => _NewTransactionScreenState();
+          }
+
+          class _NewTransactionScreenState extends State<NewTransactionScreen> {
+            final _clientController = TextEditingController();
+            final _amountController = TextEditingController();
+
+            void _save() async {
+              final client = _clientController.text.trim();
+              final amount = double.tryParse(_amountController.text) ?? 0.0;
+              if (client.isEmpty || amount <= 0) return;
+
+              await DatabaseHelper.instance.insertTransaction({
+                'type': widget.type,
+                'client': client,
+                'amount': amount,
+                'status': 'Completada',
+                'date': DateTime.now().toString().substring(0, 10),
+              });
+
+              Navigator.pop(context);
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              final isVenta = widget.type == 'VENTA';
+              return Scaffold(
+                appBar: AppBar(
+                  title: Text(isVenta ? 'Registrar Nueva Venta' : 'Registrar Nueva Compra'),
+                  backgroundColor: const Color(0xFF111827),
                 ),
                 body: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'Gestión Comercial',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      TextField(
+                        controller: _clientController,
+                        decoration: const InputDecoration(labelText: 'Cliente / Proveedor', border: OutlineInputBorder()),
                       ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Seleccione una operación principal:',
-                        style: TextStyle(color: Colors.grey),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Monto (\$)', border: OutlineInputBorder()),
                       ),
-                      const SizedBox(height: 40),
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.point_of_sale, size: 28),
-                        label: const Text(
-                          'Nueva Venta',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _save,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10b981),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          backgroundColor: isVenta ? const Color(0xFF10b981) : const Color(0xFF3b82f6),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.shopping_cart_outlined, size: 28),
-                        label: const Text(
-                          'Nueva Compra',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3b82f6),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                        child: Text('Guardar ${widget.type}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),

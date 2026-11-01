@@ -75,30 +75,54 @@ class _DashboardViewState extends State<DashboardView> {
   void _showQuickActions(BuildContext context) {
     showDialog(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.7),
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF111827),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Colors.white10),
-          ),
-          title: const Text(
-            'MENÚ RÁPIDO',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A2738),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white10),
             ),
-            textAlign: TextAlign.center,
-          ),
-          content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.request_quote_rounded, color: Colors.redAccent),
-                  title: const Text('Nueva Venta', style: TextStyle(color: Colors.white, fontSize: 13)),
+                const SizedBox(height: 8),
+                const Text(
+                  'MENÚ RÁPIDO ERP',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _quickActionTile(
+                  icon: Icons.receipt_long_rounded,
+                  iconColor: Colors.redAccent,
+                  label: 'Nueva Cuenta por Cobrar',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FormScreen(
+                          title: 'Nueva Cuenta por Cobrar',
+                          type: 'VENTA',
+                        ),
+                      ),
+                    ).then((_) => loadData());
+                  },
+                ),
+                const SizedBox(height: 12),
+                _quickActionTile(
+                  icon: Icons.shopping_cart_rounded,
+                  iconColor: Colors.greenAccent,
+                  label: 'Registrar Venta',
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -112,27 +136,11 @@ class _DashboardViewState extends State<DashboardView> {
                     ).then((_) => loadData());
                   },
                 ),
-                const Divider(color: Colors.white10),
-                ListTile(
-                  leading: const Icon(Icons.shopping_cart_rounded, color: Colors.greenAccent),
-                  title: const Text('Registrar Venta', style: TextStyle(color: Colors.white, fontSize: 13)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FormScreen(
-                          title: 'Registrar Venta',
-                          type: 'VENTA',
-                        ),
-                      ),
-                    ).then((_) => loadData());
-                  },
-                ),
-                const Divider(color: Colors.white10),
-                ListTile(
-                  leading: const Icon(Icons.inventory_2_rounded, color: Colors.blueAccent),
-                  title: const Text('Nuevo Producto', style: TextStyle(color: Colors.white, fontSize: 13)),
+                const SizedBox(height: 12),
+                _quickActionTile(
+                  icon: Icons.inventory_2_rounded,
+                  iconColor: Colors.blueAccent,
+                  label: 'Nuevo Producto',
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -140,25 +148,23 @@ class _DashboardViewState extends State<DashboardView> {
                       MaterialPageRoute(
                         builder: (_) => const FormScreen(
                           title: 'Nuevo Producto',
-                          type: 'PRODUCTO',
+                          type: 'COMPRA',
                         ),
                       ),
                     ).then((_) => loadData());
                   },
                 ),
-                const Divider(color: Colors.white10),
-                ListTile(
-                  leading: const Icon(Icons.grid_view_rounded, color: Colors.purpleAccent),
-                  title: const Text('Módulos operativos', style: TextStyle(color: Colors.white, fontSize: 13)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _openModule('Cobros', 'COBRO');
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cerrar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Text(
+                    'Cerrar',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -168,10 +174,54 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
+  Widget _quickActionTile({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: const Color(0xFF1F2A3B),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 26),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final rentabilidad = totalVentas - totalCompras;
     final deuda = totalVentas * 0.3;
+    final rentabilidad = totalVentas - totalCompras;
 
     return Scaffold(
       backgroundColor: const Color(0xFF05080F),
@@ -183,24 +233,132 @@ class _DashboardViewState extends State<DashboardView> {
                   constraints: const BoxConstraints(maxWidth: 430),
                   child: Column(
                     children: [
-                      const SizedBox(height: 8),
-                      _statusBar(),
                       const SizedBox(height: 12),
-                      _header(),
-                      const SizedBox(height: 22),
+                      _topBar(),
+                      const SizedBox(height: 18),
                       Expanded(
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.symmetric(horizontal: 18),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _chartCard(),
+                              _headerGemini(),
+                              const SizedBox(height: 20),
+                              _alertBanner(
+                                text: '1 Deuda(s) Vencida(s) • Cobrar \$${deuda.toStringAsFixed(0)}',
+                                accent: Colors.redAccent,
+                                showAction: true,
+                                actionLabel: 'Exportar',
+                                onActionTap: () => _openModule('Cobros', 'COBRO'),
+                              ),
                               const SizedBox(height: 16),
-                              _actionGrid(),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _metricCard(
+                                      title: 'Por Cobrar',
+                                      value: '\$${deuda.toStringAsFixed(2)}',
+                                      subtitle: '1 Vencidas',
+                                      subValue: '(\$3000)',
+                                      accent: Colors.redAccent,
+                                      icon: Icons.warning_amber_rounded,
+                                      iconColor: Colors.redAccent,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _metricCard(
+                                      title: 'Ingresos',
+                                      value: '\$${totalVentas.toStringAsFixed(0)}',
+                                      subtitle: '+12.7% este mes',
+                                      accent: Colors.greenAccent,
+                                      icon: Icons.trending_up_rounded,
+                                      iconColor: Colors.greenAccent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _metricCard(
+                                      title: 'Valor Stock',
+                                      value: '\$${(totalVentas * 0.45).toStringAsFixed(0)}',
+                                      subtitle: 'En inventario activo',
+                                      accent: Colors.blueAccent,
+                                      icon: Icons.inventory_2_rounded,
+                                      iconColor: Colors.blueAccent,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _metricCard(
+                                      title: 'Stock Bajo',
+                                      value: '2 Prod.',
+                                      subtitle: 'Requieren reposición',
+                                      accent: Colors.orangeAccent,
+                                      icon: Icons.warning_amber_rounded,
+                                      iconColor: Colors.orangeAccent,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 16),
-                              _moduleNav(),
-                              const SizedBox(height: 22),
-                              _denunciaBar(),
+                              _sectionTitle(),
+                              const SizedBox(height: 10),
+                              if (items.isEmpty)
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF111827),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.white10),
+                                  ),
+                                  child: const Text(
+                                    'No hay registros para mostrar.',
+                                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                                  ),
+                                )
+                              else
+                                ...items.take(3).map(
+                                  (tx) => Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF111827),
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(color: Colors.white10),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '${tx.client} • ${tx.paymentMode}',
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          '\$${tx.amount.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            color: tx.amount >= 0 ? Colors.greenAccent : Colors.redAccent,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               const SizedBox(height: 16),
+                              _bottomActionRow(),
+                              const SizedBox(height: 20),
                               _browserBar(),
                             ],
                           ),
@@ -214,14 +372,14 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _statusBar() {
+  Widget _topBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            '9:37',
+            '11:07',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -242,63 +400,119 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _header() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF21C6FF), Color(0xFF4F8BFF), Color(0xFFFFB900)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
+  Widget _headerGemini() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF2AD7FF), Color(0xFF4C8DFF), Color(0xFFFFC857)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: const Center(
-                  child: Icon(Icons.auto_awesome, size: 18, color: Colors.white),
-                ),
+                borderRadius: BorderRadius.all(Radius.circular(10)),
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Gemini',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: const Center(
+                child: Icon(Icons.auto_awesome, color: Colors.white, size: 18),
               ),
-            ],
-          ),
-          Container(
-            width: 42,
-            height: 42,
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Gemini',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        GestureDetector(
+          onTap: () => _showQuickActions(context),
+          child: Container(
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: const Color(0xFF111827),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white10),
             ),
-            child: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 22),
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _alertBanner({
+    required String text,
+    required Color accent,
+    required bool showAction,
+    required String actionLabel,
+    required VoidCallback onActionTap,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101d34),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.warning_amber_rounded, color: accent, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (showAction)
+            TextButton(
+              onPressed: onActionTap,
+              child: Text(
+                actionLabel,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _chartCard() {
+  Widget _metricCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    String? subValue,
+    required Color accent,
+    required IconData icon,
+    required Color iconColor,
+  }) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF121E31),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFF5A7DAF), width: 1.2),
+        color: const Color(0xFF111827),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,166 +520,91 @@ class _DashboardViewState extends State<DashboardView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Rendimiento de Ventas',
-                style: TextStyle(
+              Text(
+                title,
+                style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1B2A3A),
-                  borderRadius: BorderRadius.circular(12),
+                  color: iconColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'USD (\$)',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 210,
-            child: CustomPaint(
-              painter: SalesChartPainter(),
-              child: const SizedBox.expand(),
+          Text(
+            value,
+            style: TextStyle(
+              color: accent,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              height: 1.1,
             ),
           ),
+          const SizedBox(height: 6),
+          if (subtitle.isNotEmpty)
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+              ),
+            ),
+          if (subValue != null && subValue.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                subValue,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _actionGrid() {
+  Widget _sectionTitle() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: _actionCard(
-            title: 'Nueva\nVenta',
-            subtitle: 'Registrar\nventa',
-            icon: Icons.receipt_long_rounded,
-            iconColor: const Color(0xFFff5d5d),
-            bgColor: const Color(0xFF1b2333),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const FormScreen(
-                  title: 'Registrar Venta',
-                  type: 'VENTA',
-                ),
+        Row(
+          children: const [
+            Icon(Icons.notifications_rounded, color: Colors.orangeAccent, size: 20),
+            SizedBox(width: 8),
+            Text(
+              'Próximos Vencimientos de\nCobro',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                height: 1.15,
               ),
-            ).then((_) => loadData()),
-          ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _actionCard(
-            title: 'Nueva\nVenta',
-            subtitle: 'Contado /\nFactura',
-            icon: Icons.shopping_basket_rounded,
-            iconColor: const Color(0xFF29d399),
-            bgColor: const Color(0xFF1b2333),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const FormScreen(
-                  title: 'Registrar Venta',
-                  type: 'VENTA',
-                ),
-              ),
-            ).then((_) => loadData()),
-          ),
+        TextButton(
+          onPressed: () => _openModule('Cobros', 'COBRO'),
+          child: const Text('Ver Todo', style: TextStyle(color: Colors.white70, fontSize: 12)),
         ),
       ],
     );
   }
 
-  Widget _actionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          height: 120,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: iconColor, size: 28),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _moduleNav() {
-    final modules = [
-      _ModuleItem('Inicio', Icons.home_rounded, true),
-      _ModuleItem('Cobros', Icons.access_time_rounded, false),
-      _ModuleItem('Stock', Icons.inventory_2_rounded, false),
-      _ModuleItem('Kardex', Icons.receipt_rounded, false),
-      _ModuleItem('Clientes', Icons.people_alt_rounded, false),
-    ];
-
+  Widget _bottomActionRow() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF121E31),
         borderRadius: BorderRadius.circular(18),
@@ -473,81 +612,47 @@ class _DashboardViewState extends State<DashboardView> {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: modules
-            .map(
-              (m) => GestureDetector(
-                onTap: () {
-                  if (m.label == 'Cobros') {
-                    _openModule('Cobros', 'COBRO');
-                  } else if (m.label == 'Stock') {
-                    _openModule('Stock', 'PRODUCTO');
-                  } else if (m.label == 'Kardex') {
-                    _openModule('Kardex', 'PRODUCTO');
-                  } else if (m.label == 'Clientes') {
-                    _openModule('Clientes', null);
-                  }
-                },
-                child: Column(
-                  children: [
-                    Icon(
-                      m.icon,
-                      color: m.isSelected ? const Color(0xFF68B7FF) : Colors.white70,
-                      size: 24,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      m.label,
-                      style: TextStyle(
-                        color: m.isSelected ? const Color(0xFF68B7FF) : Colors.white70,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            .toList(),
+        children: [
+          _navIcon(label: 'Inicio', icon: Icons.home_rounded, active: true),
+          _navIcon(label: 'Cobros', icon: Icons.schedule_rounded, active: false),
+          _navIcon(label: 'Stock', icon: Icons.inventory_2_rounded, active: false),
+          _navIcon(label: 'Kardex', icon: Icons.receipt_long_rounded, active: false),
+          _navIcon(label: 'Clientes', icon: Icons.people_alt_rounded, active: false),
+        ],
       ),
     );
   }
 
-  Widget _denunciaBar() {
-    return Row(
-      children: [
-        const Expanded(
-          child: Text(
-            'Denunciar\ncontenido no\nseguro',
+  Widget _navIcon({
+    required String label,
+    required IconData icon,
+    required bool active,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        if (label == 'Cobros') {
+          _openModule('Cobros', 'COBRO');
+        } else if (label == 'Stock') {
+          _openModule('Stock', 'PRODUCTO');
+        } else if (label == 'Kardex') {
+          _openModule('Kardex', 'PRODUCTO');
+        } else if (label == 'Clientes') {
+          _openModule('Clientes', null);
+        }
+      },
+      child: Column(
+        children: [
+          Icon(icon, color: active ? const Color(0xFF68B7FF) : Colors.white70, size: 24),
+          const SizedBox(height: 6),
+          Text(
+            label,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
+              color: active ? const Color(0xFF68B7FF) : Colors.white70,
+              fontSize: 11,
             ),
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF111827),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Row(
-            children: const [
-              Icon(Icons.auto_awesome, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text(
-                'Probar Gemini Canvas',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -605,143 +710,4 @@ class _DashboardViewState extends State<DashboardView> {
       ),
     );
   }
-}
-
-class _ModuleItem {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-
-  const _ModuleItem(this.label, this.icon, this.isSelected);
-}
-
-class SalesChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF5DA9FF)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4;
-
-    final fillPaint = Paint()
-      ..color = const Color(0xFF5DA9FF).withOpacity(0.10)
-      ..style = PaintingStyle.fill;
-
-    final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.10)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    final axisPaint = Paint()
-      ..color = Colors.white.withOpacity(0.30)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    final points = [
-      const Offset(0, 160),
-      const Offset(70, 110),
-      const Offset(150, 100),
-      const Offset(230, 145),
-      const Offset(310, 120),
-    ];
-
-    final yLabels = [100000, 140000, 180000, 220000, 260000];
-    final xLabels = ['Abr', 'May', 'Jun', 'Oct'];
-
-    final chartLeft = 20.0;
-    final chartTop = 10.0;
-    final chartRight = size.width - 20;
-    final chartBottom = size.height - 30;
-
-    for (int i = 0; i < 5; i++) {
-      final y = chartTop + (i * ((chartBottom - chartTop) / 4));
-      canvas.drawLine(
-        Offset(chartLeft, y),
-        Offset(chartRight, y),
-        gridPaint,
-      );
-    }
-
-    canvas.drawLine(
-      Offset(chartLeft, 8),
-      Offset(chartRight, 8),
-      axisPaint,
-    );
-
-    final path = Path();
-    path.moveTo(points[0].dx + chartLeft, points[0].dy);
-    path.lineTo(points[1].dx + chartLeft, points[1].dy - 30);
-    path.lineTo(points[2].dx + 50 + chartLeft, points[2].dy - 20);
-    path.lineTo(points[3].dx + 50 + chartLeft, points[3].dy - 10);
-    path.lineTo(points[4].dx + 30 + chartLeft, points[4].dy - 40);
-
-    final fillPath = Path.from(path);
-    fillPath.lineTo(chartRight, chartBottom);
-    fillPath.lineTo(chartLeft, chartBottom);
-    fillPath.close();
-
-    canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, paint);
-
-    for (final p in points) {
-      final point = Offset(
-        p.dx + chartLeft,
-        p.dy,
-      );
-      final circlePaint = Paint()..color = const Color(0xFF0B1F2F);
-      final circle = Paint()..color = Colors.white;
-      canvas.drawCircle(point, 6, circlePaint);
-      canvas.drawCircle(point, 3.2, circlePaint);
-      canvas.drawCircle(point, 2.1, circle);
-    }
-
-    for (int i = 0; i < yLabels.length; i++) {
-      final y = chartTop + (i * ((chartBottom - chartTop) / 4));
-      final label = yLabels[i].toString();
-      final textPainter = TextPainter(
-        textDirection: TextDirection.ltr,
-        text: TextSpan(
-          text: label,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 11,
-          ),
-        ),
-      )..layout();
-
-      final textPainter2 = TextPainter(
-        textDirection: TextDirection.ltr,
-        text: TextSpan(
-          text: xLabels[i < xLabels.length ? i : xLabels.last],
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 11,
-          ),
-        ),
-      )..layout();
-
-      final x = chartLeft + (i * 72.0);
-      final yPos = chartBottom + 10;
-
-      if (i < xLabels.length) {
-        textPainter2.layout();
-        canvas.drawParagraph(
-          textPainter2, Offset(x + 10, yPos),
-        );
-      }
-
-      canvas.drawParagraph(
-        textPainter, Offset(30, y - 18),
-      );
-    }
-
-    canvas.drawLine(
-      Offset(chartLeft, chartTop),
-      Offset(chartLeft, chartBottom),
-      axisPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

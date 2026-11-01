@@ -76,34 +76,32 @@ jobs:
 
       - name: Write pubspec.yaml
         run: |
-          cat << 'EOF' > pubspec.yaml
-          name: erp_juan
-          description: "ERP Juan - Sistema Comercial"
-          publish_to: 'none'
-          version: 1.0.0+1
+          echo "name: erp_juan" > pubspec.yaml
+          echo "description: 'ERP Juan - Sistema Comercial'" >> pubspec.yaml
+          echo "publish_to: 'none'" >> pubspec.yaml
+          echo "version: 1.0.0+1" >> pubspec.yaml
+          echo "" >> pubspec.yaml
+          echo "environment:" >> pubspec.yaml
+          echo "  sdk: '>=3.3.0 <4.0.0'" >> pubspec.yaml
+          echo "" >> pubspec.yaml
+          echo "dependencies:" >> pubspec.yaml
+          echo "  flutter:" >> pubspec.yaml
+          echo "    sdk: flutter" >> pubspec.yaml
+          echo "  sqflite: ^2.3.2" >> pubspec.yaml
+          echo "  path: ^1.9.0" >> pubspec.yaml
+          echo "" >> pubspec.yaml
+          echo "dev_dependencies:" >> pubspec.yaml
+          echo "  flutter_test:" >> pubspec.yaml
+          echo "    sdk: flutter" >> pubspec.yaml
+          echo "  flutter_lints: ^3.0.0" >> pubspec.yaml
+          echo "" >> pubspec.yaml
+          echo "flutter:" >> pubspec.yaml
+          echo "  uses-material-design: true" >> pubspec.yaml
 
-          environment:
-            sdk: '>=3.3.0 <4.0.0'
-
-          dependencies:
-            flutter:
-              sdk: flutter
-            sqflite: ^2.3.2
-            path: ^1.9.0
-
-          dev_dependencies:
-            flutter_test:
-              sdk: flutter
-            flutter_lints: ^3.0.0
-
-          flutter:
-            uses-material-design: true
-          EOF
-
-      - name: Write clean main.dart
+      - name: Write main.dart
         run: |
           mkdir -p lib
-          cat << 'EOF' > lib/main.dart
+          cat << 'DART_CODE' > lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:path/path.dart';
           import 'package:sqflite/sqflite.dart';
@@ -274,7 +272,7 @@ jobs:
                     ...items.map((tx) => Card(
                           color: const Color(0xFF111827),
                           child: ListTile(
-                            title: Text(tx['client'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                            title: Text(tx['client'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text('${tx['type']} - ${tx['date']}'),
                             trailing: Text('\$${tx['amount']}', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
                           ),
@@ -334,7 +332,7 @@ jobs:
                 'amount': amount,
                 'date': DateTime.now().toString().substring(0, 10),
               });
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
             }
 
             @override
@@ -361,7 +359,7 @@ jobs:
               );
             }
           }
-          EOF
+          DART_CODE
 
       - name: Check Flutter environment
         run: flutter doctor -v

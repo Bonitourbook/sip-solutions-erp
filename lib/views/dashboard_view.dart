@@ -98,15 +98,15 @@ class _DashboardViewState extends State<DashboardView> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.request_quote_rounded, color: Colors.redAccent),
-                  title: const Text('Nueva Cuenta por Cobrar', style: TextStyle(color: Colors.white, fontSize: 13)),
+                  title: const Text('Nueva Venta', style: TextStyle(color: Colors.white, fontSize: 13)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const FormScreen(
-                          title: 'Nueva Cuenta por Cobrar',
-                          type: 'COBRO',
+                          title: 'Registrar Venta',
+                          type: 'VENTA',
                         ),
                       ),
                     ).then((_) => loadData());
@@ -349,8 +349,8 @@ class _DashboardViewState extends State<DashboardView> {
       children: [
         Expanded(
           child: _actionCard(
-            title: 'Nueva\nCta.\nCobrar',
-            subtitle: 'Registrar\ncrédito',
+            title: 'Nueva\nVenta',
+            subtitle: 'Registrar\nventa',
             icon: Icons.receipt_long_rounded,
             iconColor: const Color(0xFFff5d5d),
             bgColor: const Color(0xFF1b2333),
@@ -358,8 +358,8 @@ class _DashboardViewState extends State<DashboardView> {
               context,
               MaterialPageRoute(
                 builder: (_) => const FormScreen(
-                  title: 'Nueva Cuenta por Cobrar',
-                  type: 'COBRO',
+                  title: 'Registrar Venta',
+                  type: 'VENTA',
                 ),
               ),
             ).then((_) => loadData()),

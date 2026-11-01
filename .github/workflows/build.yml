@@ -1,4 +1,4 @@
-name: Build ERP Juan v1.0 Production
+name: Build ERP Juan v1.0 Release Fix
 
 on:
   push:
@@ -68,18 +68,11 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0"
 
-      - name: Preparar entorno Android y SDK Min 21
+      - name: Asegurar SDK Min 21 y Etiqueta
         run: |
-          if [ ! -d "android" ]; then
-            flutter create . --platforms=android --org com.erpjuan --project-name erp_juan
-          fi
-          # Forzar minSdkVersion 21 para compatibilidad total con bases de datos
           if [ -f "android/app/build.gradle" ]; then
             sed -i 's/minSdkVersion.*/minSdkVersion 21/g' android/app/build.gradle || true
             sed -i 's/minSdk.*/minSdk = 21/g' android/app/build.gradle || true
-          fi
-          if [ -f "android/build.gradle" ]; then
-            sed -i 's/minSdkVersion.*/minSdkVersion 21/g' android/build.gradle || true
           fi
           if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
             sed -i 's/android:label="[^"]*"/android:label="ERP Juan v1.0"/g' android/app/src/main/AndroidManifest.xml || true
@@ -88,8 +81,11 @@ jobs:
       - name: Instalar dependencias de Flutter
         run: flutter pub get
 
-      - name: Compilar APK en modo Release
-        run: flutter build apk --release
+      - name: Limpiar compilación previa
+        run: flutter clean
+
+      - name: Compilar APK Release sin Shrinking
+        run: flutter build apk --release --no-shrink
 
       - name: Renombrar APK resultante
         run: |

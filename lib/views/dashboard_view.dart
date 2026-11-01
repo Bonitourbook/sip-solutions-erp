@@ -72,7 +72,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  void _showAddOptions(BuildContext context) {
+  void _showQuickActions(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -83,7 +83,7 @@ class _DashboardViewState extends State<DashboardView> {
             side: const BorderSide(color: Colors.white10),
           ),
           title: const Text(
-            'MENÚ RÁPIDO ERP',
+            'MENÚ RÁPIDO',
             style: TextStyle(
               color: Colors.white,
               fontSize: 15,
@@ -97,11 +97,8 @@ class _DashboardViewState extends State<DashboardView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.request_quote, color: Colors.redAccent),
-                  title: const Text(
-                    'Nueva Cuenta por Cobrar',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                  ),
+                  leading: const Icon(Icons.request_quote_rounded, color: Colors.redAccent),
+                  title: const Text('Nueva Cuenta por Cobrar', style: TextStyle(color: Colors.white, fontSize: 13)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -117,11 +114,8 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
                 const Divider(color: Colors.white10),
                 ListTile(
-                  leading: const Icon(Icons.shopping_cart_outlined, color: Colors.greenAccent),
-                  title: const Text(
-                    'Registrar Venta',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                  ),
+                  leading: const Icon(Icons.shopping_cart_rounded, color: Colors.greenAccent),
+                  title: const Text('Registrar Venta', style: TextStyle(color: Colors.white, fontSize: 13)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -137,11 +131,8 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
                 const Divider(color: Colors.white10),
                 ListTile(
-                  leading: const Icon(Icons.inventory_2_outlined, color: Colors.blueAccent),
-                  title: const Text(
-                    'Nuevo Producto',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                  ),
+                  leading: const Icon(Icons.inventory_2_rounded, color: Colors.blueAccent),
+                  title: const Text('Nuevo Producto', style: TextStyle(color: Colors.white, fontSize: 13)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -158,22 +149,16 @@ class _DashboardViewState extends State<DashboardView> {
                 const Divider(color: Colors.white10),
                 ListTile(
                   leading: const Icon(Icons.grid_view_rounded, color: Colors.purpleAccent),
-                  title: const Text(
-                    'Módulos operativos',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                  ),
+                  title: const Text('Módulos operativos', style: TextStyle(color: Colors.white, fontSize: 13)),
                   onTap: () {
                     Navigator.pop(context);
                     _openModule('Cobros', 'COBRO');
                   },
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Cerrar',
-                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-                  ),
+                  child: const Text('Cerrar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -186,382 +171,418 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final rentabilidad = totalVentas - totalCompras;
+    final deuda = totalVentas * 0.3;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0b0f19),
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3b82f6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'S',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ERP Juan v1.0',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  '• Cuentas & Alertas Activas',
-                  style: TextStyle(fontSize: 10, color: Colors.greenAccent),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1e293b),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              'Por Juan',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white70,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: loadData),
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3b82f6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.add, color: Colors.white, size: 20),
-            ),
-            onPressed: () => _showAddOptions(context),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: loadData,
+      backgroundColor: const Color(0xFF050a14),
+      body: SafeArea(
         child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  if (errorMessage != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.redAccent),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              errorMessage!,
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111827),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Rentabilidad',
+                          '11:08',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Total ventas vs Total compras',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          '\$${rentabilidad.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: rentabilidad >= 0 ? Colors.greenAccent : Colors.redAccent,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: MetricCard(
-                          title: 'Ingresos Ventas',
-                          val: '\$${totalVentas.toStringAsFixed(2)}',
-                          subtitle: 'Registradas en sistema',
-                          color: Colors.blueAccent,
-                          icon: Icons.attach_money,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: MetricCard(
-                          title: 'Total Compras',
-                          val: '\$${totalCompras.toStringAsFixed(2)}',
-                          subtitle: 'Gastos de inventario',
-                          color: Colors.orangeAccent,
-                          icon: Icons.shopping_cart,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111827),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Módulos Operativos',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.3,
-                          children: [
-                            ModuleCard(
-                              title: 'Cobros',
-                              icon: Icons.account_balance_wallet_rounded,
-                              color: Colors.redAccent,
-                              onTap: () => _openModule('Cobros', 'COBRO'),
-                            ),
-                            ModuleCard(
-                              title: 'Stock',
-                              icon: Icons.inventory_2_rounded,
-                              color: Colors.blueAccent,
-                              onTap: () => _openModule('Stock', 'PRODUCTO'),
-                            ),
-                            ModuleCard(
-                              title: 'Kardex',
-                              icon: Icons.timeline_rounded,
-                              color: Colors.greenAccent,
-                              onTap: () => _openModule('Kardex', 'PRODUCTO'),
-                            ),
-                            ModuleCard(
-                              title: 'Clientes',
-                              icon: Icons.people_alt_rounded,
-                              color: Colors.orangeAccent,
-                              onTap: () => _openModule('Clientes', null),
-                            ),
+                        Row(
+                          children: const [
+                            Icon(Icons.signal_cellular_4_bar_rounded, color: Colors.white, size: 18),
+                            SizedBox(width: 8),
+                            Icon(Icons.wifi_rounded, color: Colors.white, size: 18),
+                            SizedBox(width: 8),
+                            Icon(Icons.battery_full_rounded, color: Colors.white, size: 20),
                           ],
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111827),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 14),
+                    Row(
                       children: [
-                        const Text(
-                          'Historial Operativo General',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontSize: 15,
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A2B4A),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'S',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        if (items.isEmpty)
-                          const Text(
-                            'No hay registros todavía. Usa el botón "+" superior para agregar.',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                          )
-                        else
-                          ...items.map(
-                            (tx) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'SIP Solutions\nERP',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0f172a),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: IconButton(
+                            onPressed: () => _showQuickActions(context),
+                            icon: const Icon(Icons.add, color: Colors.white, size: 22),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF101d34),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: Colors.white12, width: 1.2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 12,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'SIP Solutions ERP',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF203150),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  'DARK UI',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Icon(Icons.circle, size: 12, color: Colors.greenAccent),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Cuentas & Alertas Activas',
+                                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                                ),
+                              ),
+                              Row(
                                 children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          tx.client,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${tx.type} · ${tx.clientType} ${tx.hasDelivery ? '(Con Delivery)' : ''}',
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
+                                  _smallIconButton(Icons.sync_rounded, Colors.white70),
+                                  const SizedBox(width: 8),
+                                  _smallIconButton(Icons.add_rounded, Colors.white70),
+                                ],
+                              )
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0c1527),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.red.withOpacity(0.45)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    '1 Deuda(s) Vencida(s) • Cobrar \$${deuda.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                ),
+                                TextButton(
+                                  onPressed: () => _openModule('Cobros', 'COBRO'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  child: const Text(
+                                    'Exportar',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _summaryCard(
+                                  title: 'Por Cobrar',
+                                  value: '\$${deuda.toStringAsFixed(2)}',
+                                  subtitle: '1 Vencidas',
+                                  subValue: '(\$3000)',
+                                  accent: Colors.redAccent,
+                                  icon: Icons.warning_amber_rounded,
+                                  background: const Color(0xFF111d2b),
+                                  iconBackground: const Color(0x1AFF5A5A),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _summaryCard(
+                                  title: 'Ingresos',
+                                  value: '\$${totalVentas.toStringAsFixed(0)}',
+                                  subtitle: '+12.7% este mes',
+                                  subValue: '',
+                                  accent: Colors.greenAccent,
+                                  icon: Icons.trending_up_rounded,
+                                  background: const Color(0xFF101d33),
+                                  iconBackground: const Color(0x1A34D399),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _summaryCard(
+                                  title: 'Valor Stock',
+                                  value: '\$${(totalVentas * 0.45).toStringAsFixed(0)}',
+                                  subtitle: 'En inventario activo',
+                                  subValue: '',
+                                  accent: Colors.blueAccent,
+                                  icon: Icons.inventory_2_rounded,
+                                  background: const Color(0xFF101d33),
+                                  iconBackground: const Color(0x1A60A5FA),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _summaryCard(
+                                  title: 'Stock Bajo',
+                                  value: '2 Prod.',
+                                  subtitle: 'Requieren reposición',
+                                  subValue: '',
+                                  accent: Colors.orangeAccent,
+                                  icon: Icons.warning_amber_rounded,
+                                  background: const Color(0xFF101d33),
+                                  iconBackground: const Color(0x1AF59E0B),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: const [
+                                  Icon(Icons.notifications_rounded, color: Colors.orangeAccent, size: 22),
+                                  SizedBox(width: 8),
                                   Text(
-                                    '\$${tx.amount.toStringAsFixed(2)}',
-                                    style: const TextStyle(
+                                    'Próximos Vencimientos de\nCobro',
+                                    style: TextStyle(
+                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.amber,
-                                      fontSize: 14,
+                                      fontSize: 18,
                                     ),
                                   ),
                                 ],
                               ),
+                              TextButton(
+                                onPressed: () => _openModule('Cobros', 'COBRO'),
+                                child: const Text('Ver Todo', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          if (items.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Text(
+                                'No hay vencimientos programados.',
+                                style: TextStyle(color: Colors.grey, fontSize: 12),
+                              ),
+                            )
+                          else
+                            ...items.take(3).map(
+                              (tx) => Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.02),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${tx.client} • ${tx.paymentMode}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '\$${tx.amount.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        color: tx.amount >= 0 ? Colors.greenAccent : Colors.redAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0f172a),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: Row(
+                              children: const [
+                                Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Denunciar contenido no seguro',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                      ],
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              const Icon(Icons.home_rounded, color: Colors.white70, size: 26),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'gemini.google.com',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(Icons.add, color: Colors.white, size: 24),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
       ),
     );
   }
-}
 
-class ModuleCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const ModuleCard({
-    super.key,
-    required this.title,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF111827),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+  Widget _smallIconButton(IconData icon, Color color) {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: const Color(0xFF203150),
+        borderRadius: BorderRadius.circular(10),
       ),
+      child: Icon(icon, color: color, size: 16),
     );
   }
-}
 
-class MetricCard extends StatelessWidget {
-  final String title;
-  final String val;
-  final String subtitle;
-  final Color color;
-  final IconData icon;
-
-  const MetricCard({
-    super.key,
-    required this.title,
-    required this.val,
-    required this.subtitle,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _summaryCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required String subValue,
+    required Color accent,
+    required IconData icon,
+    required Color background,
+    required Color iconBackground,
+  }) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF111827),
-        borderRadius: BorderRadius.circular(12),
+        color: background,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white10),
       ),
       child: Column(
@@ -570,21 +591,56 @@ class MetricCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              Icon(icon, color: color, size: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: iconBackground,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: accent, size: 18),
+              ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
           Text(
-            val,
-            style: const TextStyle(
-              fontSize: 16,
+            value,
+            style: TextStyle(
+              color: accent,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              height: 1.1,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(subtitle, style: TextStyle(fontSize: 9, color: color)),
+          const SizedBox(height: 6),
+          if (subtitle.isNotEmpty)
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+              ),
+            ),
+          if (subValue.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                subValue,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
         ],
       ),
     );

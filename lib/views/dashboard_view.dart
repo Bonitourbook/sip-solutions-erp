@@ -13,6 +13,7 @@ class DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<DashboardView> {
   double totalVentas = 0.0;
   double totalCompras = 0.0;
+  double totalCuentasPorCobrar = 0.0;
   List<TransactionModel> items = [];
 
   @override
@@ -22,13 +23,20 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   Future<void> loadData() async {
-    final v = await ErpController.instance.getSum('VENTA');
-    final c = await ErpController.instance.getSum('COMPRA');
-    final list = await ErpController.instance.getTransactions();
+    final results = await Future.wait([
+      ErpController.instance.getSum('VENTA'),
+      ErpController.instance.getSum('COMPRA'),
+      ErpController.instance.getPendingReceivablesTotal(),
+      ErpController.instance.getTransactions(),
+    ]);
+
+    if (!mounted) return;
+
     setState(() {
-      totalVentas = v;
-      totalCompras = c;
-      items = list;
+      totalVentas = results[0] as double;
+      totalCompras = results[1] as double;
+      totalCuentasPorCobrar = results[2] as double;
+      items = results[3] as List<TransactionModel>;
     });
   }
 
@@ -147,7 +155,29 @@ class _DashboardViewState extends State<DashboardView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Tarjeta Rentabilidad Premium
+            if (totalCuentasPorCobrar > 0)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.redAccent.withOpacity(0.25)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Cuentas por cobrar',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      '\$${totalCuentasPorCobrar.toStringAsFixed(2)}',
+                      style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -195,12 +225,14 @@ class _DashboardViewState extends State<DashboardView> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(tx.client, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                              Text('${tx.type} · ${tx.clientType} ${tx.hasDelivery ? "(Con Delivery)" : ""}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                            ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(tx.client, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                                Text('${tx.type} · ${tx.clientType} ${tx.hasDelivery ? "(Con Delivery)" : ""}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                              ],
+                            ),
                           ),
                           Text('\$${tx.amount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14)),
                         ],

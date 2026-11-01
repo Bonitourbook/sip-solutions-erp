@@ -1,4 +1,4 @@
-name: Build ERP Juan v1.0
+name: Build and Sync ERP Juan v1.0
 
 on:
   push:
@@ -638,8 +638,7 @@ jobs:
           }
           EOF
 
-      - name: Escribir pubspec.yaml
-        run: |
+          # 7. PUBSPEC.YAML
           cat << 'EOF' > pubspec.yaml
           name: erp_juan
           description: "ERP Juan v1.0 - MVC Architecture"
@@ -663,6 +662,14 @@ jobs:
           flutter:
             uses-material-design: true
           EOF
+
+      - name: Sincronizar y guardar archivos en el repositorio (Git Commit)
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add lib/ pubspec.yaml
+          git commit -m "chore: sincronizar estructura MVC completa de ERP Juan v1.0" || echo "No hay cambios que comprometer"
+          git push || echo "Push omitido o sin cambios pendientes"
 
       - name: Instalar dependencias de Flutter
         run: flutter pub get

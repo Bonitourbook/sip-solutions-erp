@@ -68,14 +68,21 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0"
 
+      - name: Crear estructura nativa de Android y configurar etiqueta
+        run: |
+          flutter create . --platforms=android --org com.erpjuan --project-name erp_juan --overwrite
+          sed -i 's/android:label="[^"]*"/android:label="ERP Juan"/g' android/app/src/main/AndroidManifest.xml
+          # Asegurar minSdkVersion 21 para compatibilidad con sqflite
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || true
+
       - name: Check Flutter environment
         run: flutter doctor -v
 
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Build release APK with stacktrace
-        run: flutter build apk --release --verbose --no-pub
+      - name: Build release APK
+        run: flutter build apk --release
 
       - name: Rename APK file
         run: |

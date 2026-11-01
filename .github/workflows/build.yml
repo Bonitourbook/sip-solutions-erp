@@ -375,29 +375,43 @@ jobs:
                       side: const BorderSide(color: Colors.white10),
                     ),
                     title: const Text(
-                      'Seleccionar Operación',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      'MENÚ RÁPIDO ERP',
+                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                       textAlign: TextAlign.center,
                     ),
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ListTile(
-                          leading: const Icon(Icons.point_of_sale, color: Colors.greenAccent),
-                          title: const Text('Nueva Venta', style: TextStyle(color: Colors.white)),
+                          leading: const Icon(Icons.request_quote, color: Colors.redAccent),
+                          title: const Text('Nueva Cuenta por Cobrar', style: TextStyle(color: Colors.white, fontSize: 13)),
                           onTap: () {
                             Navigator.pop(context);
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nueva Venta', type: 'VENTA'))).then((_) => loadData());
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nueva Cuenta por Cobrar', type: 'VENTA'))).then((_) => loadData());
                           },
                         ),
                         const Divider(color: Colors.white10),
                         ListTile(
-                          leading: const Icon(Icons.shopping_cart_outlined, color: Colors.blueAccent),
-                          title: const Text('Nueva Compra', style: TextStyle(color: Colors.white)),
+                          leading: const Icon(Icons.shopping_cart_outlined, color: Colors.greenAccent),
+                          title: const Text('Registrar Venta', style: TextStyle(color: Colors.white, fontSize: 13)),
                           onTap: () {
                             Navigator.pop(context);
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nueva Compra', type: 'COMPRA'))).then((_) => loadData());
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Registrar Venta', type: 'VENTA'))).then((_) => loadData());
                           },
+                        ),
+                        const Divider(color: Colors.white10),
+                        ListTile(
+                          leading: const Icon(Icons.inventory_2_outlined, color: Colors.blueAccent),
+                          title: const Text('Nuevo Producto', style: TextStyle(color: Colors.white, fontSize: 13)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nuevo Producto', type: 'COMPRA'))).then((_) => loadData());
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cerrar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -425,18 +439,25 @@ jobs:
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
-                          Text('ERP Juan v1.0', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                          Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 11, color: Colors.greenAccent)),
+                          Text('ERP Juan v1.0', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
                         ],
                       ),
                     ],
                   ),
                   actions: [
-                    IconButton(icon: const Icon(Icons.refresh), onPressed: loadData),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: const Color(0xFF1e293b), borderRadius: BorderRadius.circular(6)),
+                      child: const Text('Por Juan', style: TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
+                    ),
+                    IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: loadData),
                     IconButton(
                       icon: Container(
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(color: const Color(0xFF3b82f6), borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.add, color: Colors.white),
+                        child: const Icon(Icons.add, color: Colors.white, size: 20),
                       ),
                       onPressed: () => _showAddOptions(context),
                     ),
@@ -668,7 +689,7 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add lib/ pubspec.yaml
-          git commit -m "chore: sincronizar estructura MVC completa de ERP Juan v1.0" || echo "No hay cambios que comprometer"
+          git commit -m "chore: actualizar diseño, etiqueta Por Juan y menú rápido en ERP Juan v1.0" || echo "No hay cambios que comprometer"
           git push || echo "Push omitido o sin cambios pendientes"
 
       - name: Instalar dependencias de Flutter

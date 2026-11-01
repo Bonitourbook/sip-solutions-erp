@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 📌 Necesario para pantalla completa
 import 'views/main_navigation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 📌 Oculta la barra de estado y de navegación del sistema (Pantalla Completa Nativa)
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
   runApp(const ErpJuanApp());
 }
 

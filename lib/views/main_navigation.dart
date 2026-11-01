@@ -1,46 +1,57 @@
 import 'package:flutter/material.dart';
-
-import '../controllers/erp_controller.dart';
 import 'dashboard_view.dart';
-import 'form_screen.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key, required this.controller});
-
-  final ErpController controller;
+  const MainNavigation({super.key});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const DashboardView(),
+    const PlaceholderModule(title: 'Módulo de Cobros'),
+    const PlaceholderModule(title: 'Módulo de Stock'),
+    const PlaceholderModule(title: 'Módulo de Kardex'),
+    const PlaceholderModule(title: 'Módulo de Clientes'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final screens = <Widget>[
-      DashboardView(controller: widget.controller),
-      FormScreen(controller: widget.controller),
-    ];
-
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: screens,
-      ),
+      body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        backgroundColor: const Color(0xFF0b0f19),
+        selectedItemColor: Colors.blueAccent,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle),
-            label: 'Transacción',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Inicio'),
+          BottomNavigationBarItem(icon: Icon(Icons.schedule), label: 'Cobros'),
+          BottomNavigationBarItem(icon: Icon(Icons.inventory_2_outlined), label: 'Stock'),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Kardex'),
+          BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: 'Clientes'),
         ],
+      ),
+    );
+  }
+}
+
+class PlaceholderModule extends StatelessWidget {
+  final String title;
+  const PlaceholderModule({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title), backgroundColor: const Color(0xFF111827)),
+      body: Center(
+        child: Text('$title en desarrollo', style: const TextStyle(color: Colors.white, fontSize: 16)),
       ),
     );
   }

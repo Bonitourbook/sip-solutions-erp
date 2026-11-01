@@ -1,17 +1,19 @@
 class TransactionModel {
   final int? id;
-  final String type; // 'SALE' o 'PURCHASE'
-  final int productId;
-  final int quantity;
-  final double totalPrice;
+  final String type;
+  final String client;
+  final String clientType;
+  final double amount;
+  final String status;
   final String date;
 
   TransactionModel({
     this.id,
     required this.type,
-    required this.productId,
-    required this.quantity,
-    required this.totalPrice,
+    required this.client,
+    required this.clientType,
+    required this.amount,
+    required this.status,
     required this.date,
   });
 
@@ -19,9 +21,10 @@ class TransactionModel {
     return {
       'id': id,
       'type': type,
-      'productId': productId,
-      'quantity': quantity,
-      'totalPrice': totalPrice,
+      'client': client,
+      'client_type': clientType,
+      'amount': amount,
+      'status': status,
       'date': date,
     };
   }
@@ -30,9 +33,10 @@ class TransactionModel {
     return TransactionModel(
       id: map['id'],
       type: map['type'],
-      productId: map['productId'],
-      quantity: map['quantity'],
-      totalPrice: map['totalPrice'],
+      client: map['client'],
+      clientType: map['client_type'],
+      amount: map['amount'],
+      status: map['status'],
       date: map['date'],
     );
   }

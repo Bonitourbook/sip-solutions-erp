@@ -1,40 +1,61 @@
-import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+import '../models/transaction_model.dart';
 
 class ErpController {
-  final List<TransactionModel> transactions = <TransactionModel>[];
+  static final ErpController instance = ErpController._init();
+  static Database? _database;
 
-  void addTransaction(TransactionModel transaction) {
-    transactions.add(transaction);
+  ErpController._init();
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDB('erp_juan_v1.db');
+    return _database!;
   }
 
-  void removeTransaction(String id) {
-    transactions.removeWhere((transaction) => transaction.id == id);
+  Future<Database> _initDB(String filePath) async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, filePath);
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT,
+            client TEXT,
+            client_type TEXT,
+            amount REAL,
+            paid_amount REAL,
+            payment_mode TEXT,
+            has_delivery INTEGER,
+            status TEXT,
+            date TEXT
+          )
+        ''');
+      },
+    );
   }
 
-  List<TransactionModel> getVisibleTransactions() {
-    return List<TransactionModel>.from(transactions);
+  Future<List<TransactionModel>> getTransactions() async {
+    final db = await instance.database;
+    final result = await db.query('transactions', orderBy: 'id DESC');
+    return result.map((json) => TransactionModel.fromMap(json)).toList();
   }
-}
 
-class TransactionModel {
-  TransactionModel({
-    required this.id,
-    required this.description,
-    required this.amount,
-    required this.date,
-  });
+  Future<int> insertTransaction(TransactionModel transaction) async {
+    final db = await instance.database;
+    return await db.insert('transactions', transaction.toMap());
+  }
 
-  final String id;
-  final String description;
-  final double amount;
-  final DateTime date;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'description': description,
-      'amount': amount,
-      'date': date.toIso8601String(),
-    };
+  Future<double> getSum(String type) async {
+    final db = await instance.database;
+    final res = await db.rawQuery('SELECT SUM(amount) as total FROM transactions WHERE type = ?', [type]);
+    if (res.isNotEmpty && res.first['total'] != null) {
+      return (res.first['total'] as num).toDouble();
+    }
+    return 0.0;
   }
 }

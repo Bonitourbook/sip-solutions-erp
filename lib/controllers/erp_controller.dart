@@ -35,21 +35,28 @@ class ErpController {
             date TEXT
           )
         ''');
+
+        String fechaHoy = DateTime.now().toString().substring(0, 10);
+
+        // 1. Productos iniciales en stock
+        await db.insert('transactions', {'type': 'PRODUCTO', 'client': 'Mónaco', 'client_type': 'General', 'amount': 37.0, 'paid_amount': 37.0, 'payment_mode': 'Contado', 'has_delivery': 0, 'status': 'Activo', 'date': fechaHoy});
+        await db.insert('transactions', {'type': 'PRODUCTO', 'client': 'Tíbet', 'client_type': 'General', 'amount': 0.0, 'paid_amount': 0.0, 'payment_mode': 'Contado', 'has_delivery': 0, 'status': 'Activo', 'date': fechaHoy});
+        await db.insert('transactions', {'type': 'PRODUCTO', 'client': 'Granada', 'client_type': 'General', 'amount': 0.0, 'paid_amount': 0.0, 'payment_mode': 'Contado', 'has_delivery': 0, 'status': 'Activo', 'date': fechaHoy});
+
+        // 2. Compra base del producto Mónaco (37€) -> Base de rentabilidad
+        await db.insert('transactions', {'type': 'COMPRA', 'client': 'Proveedor Mónaco', 'client_type': 'Proveedor', 'amount': 37.0, 'paid_amount': 37.0, 'payment_mode': 'Contado', 'has_delivery': 0, 'status': 'Completada', 'date': fechaHoy});
+
+        // 3. Venta del producto Mónaco (90€)
+        await db.insert('transactions', {'type': 'VENTA', 'client': 'Mónaco', 'client_type': 'Cliente Final', 'amount': 90.0, 'paid_amount': 90.0, 'payment_mode': 'Contado', 'has_delivery': 0, 'status': 'Completada', 'date': fechaHoy});
       },
     );
   }
 
   Future<List<TransactionModel>> getTransactions([String? typeFilter]) async {
     final db = await instance.database;
-    final result = typeFilter == null
+    final result = typeFilter == null 
         ? await db.query('transactions', orderBy: 'id DESC')
-        : await db.query(
-            'transactions',
-            where: 'type = ?',
-            whereArgs: [typeFilter],
-            orderBy: 'id DESC',
-          );
-
+        : await db.query('transactions', where: 'type = ?', whereArgs: [typeFilter], orderBy: 'id DESC');
     return result.map((json) => TransactionModel.fromMap(json)).toList();
   }
 
@@ -60,23 +67,7 @@ class ErpController {
 
   Future<double> getSum(String type) async {
     final db = await instance.database;
-    final res = await db.rawQuery(
-      'SELECT SUM(amount) as total FROM transactions WHERE type = ?',
-      [type],
-    );
-
-    if (res.isNotEmpty && res.first['total'] != null) {
-      return (res.first['total'] as num).toDouble();
-    }
-    return 0.0;
-  }
-
-  Future<double> getPendingReceivablesTotal() async {
-    final db = await instance.database;
-    final res = await db.rawQuery(
-      "SELECT SUM(amount) as total FROM transactions WHERE type = 'COBRO' AND status LIKE '%Pendiente%'",
-    );
-
+    final res = await db.rawQuery('SELECT SUM(amount) as total FROM transactions WHERE type = ?', [type]);
     if (res.isNotEmpty && res.first['total'] != null) {
       return (res.first['total'] as num).toDouble();
     }

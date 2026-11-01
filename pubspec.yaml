@@ -1,5 +1,5 @@
 name: erp_juan
-description: "ERP Juan - Sistema de Gestion Comercial y Operativa"
+description: "ERP Juan v1.0 - MVC Architecture"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -11,7 +11,6 @@ dependencies:
     sdk: flutter
   sqflite: ^2.3.2
   path: ^1.9.0
-  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:

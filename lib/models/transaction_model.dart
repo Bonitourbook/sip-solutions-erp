@@ -1,6 +1,6 @@
 class TransactionModel {
   final int? id;
-  final String type;
+  final String type; // 'VENTA', 'COMPRA', 'COBRO', 'PRODUCTO'
   final String client;
   final String clientType;
   final double amount;
@@ -41,9 +41,9 @@ class TransactionModel {
   factory TransactionModel.fromMap(Map<String, dynamic> map) {
     return TransactionModel(
       id: map['id'],
-      type: map['type'],
-      client: map['client'],
-      clientType: map['client_type'],
+      type: map['type'] ?? '',
+      client: map['client'] ?? '',
+      clientType: map['client_type'] ?? '',
       amount: map['amount'] ?? 0.0,
       paidAmount: map['paid_amount'] ?? 0.0,
       paymentMode: map['payment_mode'] ?? 'Contado',

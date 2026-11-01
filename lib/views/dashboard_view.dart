@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../controllers/erp_controller.dart';
 import '../models/transaction_model.dart';
 import 'form_screen.dart';
+import 'generic_module_view.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -57,6 +58,18 @@ class _DashboardViewState extends State<DashboardView> {
         });
       }
     }
+  }
+
+  void _openModule(String title, String? filterType) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GenericModuleView(
+          moduleTitle: title,
+          filterType: filterType,
+        ),
+      ),
+    );
   }
 
   void _showAddOptions(BuildContext context) {
@@ -140,6 +153,18 @@ class _DashboardViewState extends State<DashboardView> {
                         ),
                       ),
                     ).then((_) => loadData());
+                  },
+                ),
+                const Divider(color: Colors.white10),
+                ListTile(
+                  leading: const Icon(Icons.grid_view_rounded, color: Colors.purpleAccent),
+                  title: const Text(
+                    'Módulos operativos',
+                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openModule('Cobros', 'COBRO');
                   },
                 ),
                 const SizedBox(height: 10),
@@ -334,6 +359,63 @@ class _DashboardViewState extends State<DashboardView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
+                          'Módulos Operativos',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.3,
+                          children: [
+                            ModuleCard(
+                              title: 'Cobros',
+                              icon: Icons.account_balance_wallet_rounded,
+                              color: Colors.redAccent,
+                              onTap: () => _openModule('Cobros', 'COBRO'),
+                            ),
+                            ModuleCard(
+                              title: 'Stock',
+                              icon: Icons.inventory_2_rounded,
+                              color: Colors.blueAccent,
+                              onTap: () => _openModule('Stock', 'PRODUCTO'),
+                            ),
+                            ModuleCard(
+                              title: 'Kardex',
+                              icon: Icons.timeline_rounded,
+                              color: Colors.greenAccent,
+                              onTap: () => _openModule('Kardex', 'PRODUCTO'),
+                            ),
+                            ModuleCard(
+                              title: 'Clientes',
+                              icon: Icons.people_alt_rounded,
+                              color: Colors.orangeAccent,
+                              onTap: () => _openModule('Clientes', null),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111827),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
                           'Historial Operativo General',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -395,6 +477,63 @@ class _DashboardViewState extends State<DashboardView> {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+class ModuleCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const ModuleCard({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF111827),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

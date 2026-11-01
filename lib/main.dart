@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ErpJuanApp());
 }
@@ -15,31 +15,34 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('erp_juan.db');
+    _database = await _initDB('erp_juan_v4.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _createDB);
-  }
-
-  Future _createDB(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT NOT NULL,
-        client TEXT NOT NULL,
-        amount REAL NOT NULL,
-        date TEXT NOT NULL
-      )
-    ''');
-  }
-
-  Future<int> insertTransaction(Map<String, dynamic> row) async {
-    final db = await instance.database;
-    return await db.insert('transactions', row);
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT,
+            client TEXT,
+            client_type TEXT,
+            amount REAL,
+            status TEXT,
+            date TEXT
+          )
+        ''');
+        // Datos iniciales de prueba basados en el diseño original
+        await db.insert('transactions', {'type': 'VENTA', 'client': 'Olivia Chen (TechCorp)', 'client_type': 'Colaborador', 'amount': 3000.0, 'status': 'Vencida por 2 días', 'date': '2026-04-15'});
+        await db.insert('transactions', {'type': 'VENTA', 'client': 'Liam Brown (OmniSoft)', 'client_type': 'Cliente Final', 'amount': 3200.0, 'status': '¡Vence Hoy!', 'date': '2026-04-20'});
+        await db.insert('transactions', {'type': 'COMPRA', 'client': 'Proveedor Central', 'client_type': 'Proveedor', 'amount': 15000.0, 'status': 'Completada', 'date': '2026-04-10'});
+      },
+    );
   }
 
   Future<List>> getTransactions() async {
@@ -47,11 +50,16 @@ class DatabaseHelper {
     return await db.query('transactions', orderBy: 'id DESC');
   }
 
-  Future<double> getTotalByType(String type) async {
+  Future<int> insert(Map<String, dynamic> row) async {
     final db = await instance.database;
-    final result = await db.rawQuery('SELECT SUM(amount) as total FROM transactions WHERE type = ?', [type]);
-    if (result.isNotEmpty && result.first['total'] != null) {
-      return (result.first['total'] as num).toDouble();
+    return await db.insert('transactions', row);
+  }
+
+  Future<double> getSum(String type) async {
+    final db = await instance.database;
+    final res = await db.rawQuery('SELECT SUM(amount) as total FROM transactions WHERE type = ?', [type]);
+    if (res.isNotEmpty && res.first['total'] != null) {
+      return (res.first['total'] as num).toDouble();
     }
     return 0.0;
   }
@@ -86,22 +94,22 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   double totalVentas = 0.0;
   double totalCompras = 0.0;
-  List> recentTransactions = [];
+  List> items = [];
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    refresh();
   }
 
-  Future<void> _loadData() async {
-    final ventas = await DatabaseHelper.instance.getTotalByType('VENTA');
-    final compras = await DatabaseHelper.instance.getTotalByType('COMPRA');
-    final txs = await DatabaseHelper.instance.getTransactions();
+  Future<void> refresh() async {
+    final v = await DatabaseHelper.instance.getSum('VENTA');
+    final c = await DatabaseHelper.instance.getSum('COMPRA');
+    final list = await DatabaseHelper.instance.getTransactions();
     setState(() {
-      totalVentas = ventas;
-      totalCompras = compras;
-      recentTransactions = txs;
+      totalVentas = v;
+      compras = c;
+      items = list;
     });
   }
 
@@ -119,49 +127,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: const Color(0xFF3b82f6),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text('EJ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: const Text('S', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text('ERP Juan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('• Sistema Comercial Activo', style: TextStyle(fontSize: 11, color: Colors.green)),
+                Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 11, color: Colors.green)),
               ],
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: refresh),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Botones Principales de Motor (Protagonistas absolutos: Nueva Venta y Nueva Compra)
+            // Alerta de Deuda Vencida
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1f161a),
+                border: Border.all(color: Colors.red.withOpacity(0.4)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('1 Deuda(s) Vencida(s) · Cobrar \$7,550', style: TextStyle(fontSize: 12, color: Colors.redAccent)),
+                    ],
+                  ),
+                  Text('Exportar', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Botones Principales de Motor (Nueva Venta y Nueva Compra)
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const NewTransactionScreen(type: 'VENTA')),
-                      );
-                      _loadData();
+                      await Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(type: 'VENTA')));
+                      refresh();
                     },
-                    icon: const Icon(Icons.point_of_sale, size: 24),
-                    label: const Text('Nueva Venta', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    icon: const Icon(Icons.point_of_sale, size: 22),
+                    label: const Text('Nueva Venta', style: TextStyle(fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10b981),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
@@ -169,35 +195,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const NewTransactionScreen(type: 'COMPRA')),
-                      );
-                      _loadData();
+                      await Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(type: 'COMPRA')));
+                      refresh();
                     },
-                    icon: const Icon(Icons.shopping_cart_outlined, size: 24),
-                    label: const Text('Nueva Compra', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    icon: const Icon(Icons.shopping_cart_outlined, size: 22),
+                    label: const Text('Nueva Compra', style: TextStyle(fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3b82f6),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Tarjetas de Métricas de Negocio
+            // Tarjetas de Métricas Principales (Grid 2x2)
             Row(
               children: [
-                Expanded(child: _buildMetricCard('Total Ventas', '\$${totalVentas.toStringAsFixed(2)}', Colors.greenAccent, Icons.trending_up)),
+                Expanded(child: MetricCard(title: 'Por Cobrar', val: '\$7,550.00', subtitle: '1 Vencidas (\$3000)', color: Colors.redAccent, icon: Icons.schedule)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildMetricCard('Total Compras', '\$${totalCompras.toStringAsFixed(2)}', Colors.blueAccent, Icons.inventory)),
+                Expanded(child: MetricCard(title: 'Ingresos', val: '\$${totalVentas.toStringAsFixed(2)}', subtitle: '+12.7% este mes', color: Colors.blueAccent, icon: Icons.attach_money)),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: MetricCard(title: 'Valor Stock', val: '\$54,450', subtitle: 'En inventario activo', color: Colors.blueGrey, icon: Icons.inventory_2)),
+                const SizedBox(width: 12),
+                Expanded(child: MetricCard(title: 'Stock Bajo', val: '2 Prod.', subtitle: 'Requieren reposición', color: Colors.orangeAccent, icon: Icons.warning_amber)),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Próximos Vencimientos de Cobro
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111827),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Próximos Vencimientos de Cobro', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14)),
+                      Text('Ver Todo', style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  DebtItem(name: 'Olivia Chen (TechCorp)', status: 'Vencida por 2 días', amount: '\$3,000.00', isOverdue: true),
+                  Divider(color: Colors.white12),
+                  DebtItem(name: 'Liam Brown (OmniSoft)', status: '¡Vence Hoy!', amount: '\$3,200.00', isOverdue: false),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Historial de Operaciones Registradas
             Container(
@@ -210,37 +268,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Registro de Operaciones', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Registro Operativo y Transacciones', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 12),
-                  recentTransactions.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: Text('No hay transacciones registradas aún.', style: TextStyle(color: Colors.grey)),
-                          ),
-                        )
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: recentTransactions.length,
-                          itemBuilder: (context, index) {
-                            final tx = recentTransactions[index];
-                            final isVenta = tx['type'] == 'VENTA';
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: CircleAvatar(
-                                backgroundColor: isVenta ? Colors.green.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
-                                child: Icon(isVenta ? Icons.arrow_downward : Icons.arrow_upward, color: isVenta ? Colors.greenAccent : Colors.blueAccent),
-                              ),
-                              title: Text(tx['client'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text(tx['date'], style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                              trailing: Text(
-                                '${isVenta ? '+' : '-'}\$${tx['amount'].toStringAsFixed(2)}',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: isVenta ? Colors.greenAccent : Colors.white),
-                              ),
-                            );
-                          },
+                  ...items.map((tx) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 15,
+                              backgroundColor: tx['type'] == 'VENTA' ? Colors.green.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                              child: Icon(tx['type'] == 'VENTA' ? Icons.arrow_downward : Icons.arrow_upward, color: tx['type'] == 'VENTA' ? Colors.greenAccent : Colors.blueAccent, size: 14),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(tx['client'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    const SizedBox(width: 6),
+                                    if (tx['client_type'] != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: tx['client_type'] == 'Colaborador' ? Colors.purple.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(tx['client_type'].toString(), style: TextStyle(fontSize: 9, color: tx['client_type'] == 'Colaborador' ? Colors.purpleAccent : Colors.white70)),
+                                      ),
+                                  ],
+                                ),
+                                Text('${tx['type']} · ${tx['date']}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                              ],
+                            ),
+                          ],
                         ),
+                        Text('\$${tx['amount']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14)),
+                      ],
+                    ),
+                  )),
                 ],
               ),
             ),
@@ -249,10 +318,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+}
 
-  Widget _buildMetricCard(String title, String value, Color accentColor, IconData icon) {
+class MetricCard extends StatelessWidget {
+  final String title;
+  final String val;
+  final String subtitle;
+  final Color color;
+  final IconData icon;
+
+  const MetricCard({super.key, required this.title, required this.val, required this.subtitle, required this.color, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.circular(12),
@@ -264,83 +344,118 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-              Icon(icon, color: accentColor, size: 18),
+              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Icon(icon, color: color, size: 16),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 6),
+          Text(val, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: TextStyle(fontSize: 10, color: color)),
         ],
       ),
     );
   }
 }
 
-class NewTransactionScreen extends StatefulWidget {
-  final String type;
-  const NewTransactionScreen({super.key, required this.type});
+class DebtItem extends StatelessWidget {
+  final String name;
+  final String status;
+  final String amount;
+  final bool isOverdue;
+
+  const DebtItem({super.key, required this.name, required this.status, required this.amount, required this.isOverdue});
 
   @override
-  State<NewTransactionScreen> createState() => _NewTransactionScreenState();
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isOverdue ? Colors.red.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(status, style: TextStyle(fontSize: 10, color: isOverdue ? Colors.redAccent : Colors.orangeAccent)),
+            ),
+          ],
+        ),
+        Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14)),
+      ],
+    );
+  }
 }
 
-class _NewTransactionScreenState extends State<NewTransactionScreen> {
-  final _clientController = TextEditingController();
-  final _amountController = TextEditingController();
+class FormScreen extends StatefulWidget {
+  final String type;
+  const FormScreen({super.key, required this.type});
 
-  void _saveTransaction() async {
-    final client = _clientController.text.trim();
-    final amount = double.tryParse(_amountController.text) ?? 0.0;
+  @override
+  State<FormScreen> createState() => _FormScreenState();
+}
 
+class _FormScreenState extends State<FormScreen> {
+  final clientC = TextEditingController();
+  final amountC = TextEditingController();
+  String clientType = 'Cliente Final';
+
+  void save() async {
+    final client = clientC.text.trim();
+    final amount = double.tryParse(amountC.text) ?? 0.0;
     if (client.isEmpty || amount <= 0) return;
 
-    await DatabaseHelper.instance.insertTransaction({
+    await DatabaseHelper.instance.insert({
       'type': widget.type,
       'client': client,
+      'client_type': widget.type == 'VENTA' ? clientType : 'Proveedor',
       'amount': amount,
-      'date': DateTime.now().toString().substring(0, 16),
+      'status': 'Activa',
+      'date': DateTime.now().toString().substring(0, 10),
     });
-
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isVenta = widget.type == 'VENTA';
+    final isV = widget.type == 'VENTA';
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isVenta ? 'Registrar Nueva Venta' : 'Registrar Nueva Compra'),
-        backgroundColor: const Color(0xFF111827),
-      ),
+      appBar: AppBar(title: Text(isV ? 'Registrar Nueva Venta' : 'Registrar Nueva Compra'), backgroundColor: const Color(0xFF111827)),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _clientController,
-              decoration: const InputDecoration(
-                labelText: 'Cliente / Proveedor',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            TextField(controller: clientC, decoration: const InputDecoration(labelText: 'Cliente / Proveedor', border: OutlineInputBorder())),
             const SizedBox(height: 16),
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Monto (\$)',
-                border: OutlineInputBorder(),
+            if (isV) ...[
+              DropdownButtonFormField<String>(
+                value: clientType,
+                decoration: const InputDecoration(labelText: 'Tipo de Comprador', border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'Cliente Final', child: Text('Cliente Final')),
+                  DropdownMenuItem(value: 'Colaborador', child: Text('Colaborador (Precio Diferenciado)')),
+                ],
+                onChanged: (val) {
+                  if (val != null) setState(() => clientType = val);
+                },
               ),
-            ),
+              const SizedBox(height: 16),
+            ],
+            TextField(controller: amountC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Monto (\$)', border: OutlineInputBorder())),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _saveTransaction,
+              onPressed: save,
               style: ElevatedButton.styleFrom(
-                backgroundColor: isVenta ? const Color(0xFF10b981) : const Color(0xFF3b82f6),
+                backgroundColor: isV ? const Color(0xFF10b981) : const Color(0xFF3b82f6),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text('Guardar ${isVenta ? 'Venta' : 'Compra'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text('Guardar ${widget.type}', style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

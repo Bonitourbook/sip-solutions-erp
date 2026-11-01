@@ -41,9 +41,15 @@ class ErpController {
 
   Future<List<TransactionModel>> getTransactions([String? typeFilter]) async {
     final db = await instance.database;
-    final result = typeFilter == null 
+    final result = typeFilter == null
         ? await db.query('transactions', orderBy: 'id DESC')
-        : await db.query('transactions', where: 'type = ?', whereArgs: [typeFilter], orderBy: 'id DESC');
+        : await db.query(
+            'transactions',
+            where: 'type = ?',
+            whereArgs: [typeFilter],
+            orderBy: 'id DESC',
+          );
+
     return result.map((json) => TransactionModel.fromMap(json)).toList();
   }
 
@@ -54,7 +60,11 @@ class ErpController {
 
   Future<double> getSum(String type) async {
     final db = await instance.database;
-    final res = await db.rawQuery('SELECT SUM(amount) as total FROM transactions WHERE type = ?', [type]);
+    final res = await db.rawQuery(
+      'SELECT SUM(amount) as total FROM transactions WHERE type = ?',
+      [type],
+    );
+
     if (res.isNotEmpty && res.first['total'] != null) {
       return (res.first['total'] as num).toDouble();
     }

@@ -40,43 +40,40 @@ class _DashboardViewState extends State<DashboardView> {
           backgroundColor: const Color(0xFF111827),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Colors.white10),
+            side: BorderSide(color: Colors.white.withOpacity(0.08)),
           ),
           title: const Text(
             'MENÚ RÁPIDO ERP',
-            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2),
             textAlign: TextAlign.center,
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.request_quote, color: Colors.redAccent),
-                title: const Text('Nueva Cuenta por Cobrar', style: TextStyle(color: Colors.white, fontSize: 13)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nueva Cuenta por Cobrar', type: 'COBRO'))).then((_) => loadData());
-                },
+              _buildMenuTile(
+                context,
+                icon: Icons.request_quote,
+                color: Colors.redAccent,
+                title: 'Nueva Cuenta por Cobrar',
+                type: 'COBRO',
               ),
-              const Divider(color: Colors.white10),
-              ListTile(
-                leading: const Icon(Icons.shopping_cart_outlined, color: Colors.greenAccent),
-                title: const Text('Registrar Venta', style: TextStyle(color: Colors.white, fontSize: 13)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Registrar Venta', type: 'VENTA'))).then((_) => loadData());
-                },
+              Divider(color: Colors.white.withOpacity(0.06), height: 1),
+              _buildMenuTile(
+                context,
+                icon: Icons.shopping_cart_outlined,
+                color: Colors.greenAccent,
+                title: 'Registrar Venta',
+                type: 'VENTA',
               ),
-              const Divider(color: Colors.white10),
-              ListTile(
-                leading: const Icon(Icons.inventory_2_outlined, color: Colors.blueAccent),
-                title: const Text('Nuevo Producto', style: TextStyle(color: Colors.white, fontSize: 13)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nuevo Producto', type: 'PRODUCTO'))).then((_) => loadData());
-                },
+              Divider(color: Colors.white.withOpacity(0.06), height: 1),
+              _buildMenuTile(
+                context,
+                icon: Icons.inventory_2_outlined,
+                color: Colors.blueAccent,
+                title: 'Nuevo Producto',
+                type: 'PRODUCTO',
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cerrar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
@@ -84,6 +81,20 @@ class _DashboardViewState extends State<DashboardView> {
             ],
           ),
         );
+      },
+    );
+  }
+
+  Widget _buildMenuTile(BuildContext context, {required IconData icon, required Color color, required String title, required String type}) {
+    return ListTile(
+      leading: Icon(icon, color: color, size: 22),
+      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => FormScreen(title: title, type: type)),
+        ).then((_) => loadData());
       },
     );
   }
@@ -101,13 +112,13 @@ class _DashboardViewState extends State<DashboardView> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: const Color(0xFF3b82f6), borderRadius: BorderRadius.circular(8)),
-              child: const Text('S', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+              child: const Text('S', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text('ERP Juan v1.0', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text('ERP Juan v1.0', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
                 Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
               ],
             ),
@@ -115,8 +126,8 @@ class _DashboardViewState extends State<DashboardView> {
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(color: const Color(0xFF1e293b), borderRadius: BorderRadius.circular(6)),
             child: const Text('Por Juan', style: TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
           ),
@@ -125,7 +136,7 @@ class _DashboardViewState extends State<DashboardView> {
             icon: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(color: const Color(0xFF3b82f6), borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.add, color: Colors.white, size: 20),
+              child: const Icon(Icons.add, color: Colors.white, size: 18),
             ),
             onPressed: () => _showAddOptions(context),
           ),
@@ -136,27 +147,26 @@ class _DashboardViewState extends State<DashboardView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Tarjeta de Rentabilidad
+            // Tarjeta Rentabilidad Premium
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white10),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.06)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Rentabilidad', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text('Rentabilidad', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 2),
                   const Text('Total ventas vs Total compras', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                  const SizedBox(height: 10),
-                  Text('\$${rentabilidad.toStringAsFixed(2)}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: rentabilidad >= 0 ? Colors.greenAccent : Colors.redAccent)),
+                  const SizedBox(height: 12),
+                  Text('\$${rentabilidad.toStringAsFixed(2)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: rentabilidad >= 0 ? Colors.greenAccent : Colors.redAccent)),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            // Tarjetas de Métricas
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(child: MetricCard(title: 'Ingresos Ventas', val: '\$${totalVentas.toStringAsFixed(2)}', subtitle: 'Registradas en sistema', color: Colors.blueAccent, icon: Icons.attach_money)),
@@ -165,14 +175,17 @@ class _DashboardViewState extends State<DashboardView> {
               ],
             ),
             const SizedBox(height: 20),
-            // Historial Operativo
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111827),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.06)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Historial Operativo General', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15)),
+                  const Text('Historial Operativo General', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14)),
                   const SizedBox(height: 12),
                   if (items.isEmpty)
                     const Text('No hay registros todavía. Usa el botón "+" superior para agregar.', style: TextStyle(color: Colors.grey, fontSize: 12))
@@ -196,7 +209,7 @@ class _DashboardViewState extends State<DashboardView> {
                 ],
               ),
             ),
-            const SizedBox(height: 30), // Espacio inferior para evitar solapamientos con la barra de navegación
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -217,18 +230,22 @@ class MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
               Icon(icon, color: color, size: 16),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(val, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 4),
           Text(subtitle, style: TextStyle(fontSize: 9, color: color)),

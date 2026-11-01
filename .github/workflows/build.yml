@@ -1,4 +1,4 @@
-name: Build ERP Juan v1.0 Final Clean
+name: Build ERP Juan v1.0 Debug Dart
 
 on:
   push:
@@ -68,23 +68,11 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0"
 
-      - name: Regenerar estructura Android limpia y moderna
-        run: |
-          # Eliminar la configuración nativa antigua y desactualizada
-          rm -rf android
-          # Crear una estructura nativa 100% compatible con la versión actual de Flutter
-          flutter create . --platforms=android --org com.erpjuan --project-name erp_juan
-          
-          # Asegurar etiqueta nativa de la App
-          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
-            sed -i 's/android:label="[^"]*"/android:label="ERP Juan v1.0"/g' android/app/src/main/AndroidManifest.xml || true
-          fi
-
-      - name: Instalar dependencias de Flutter
+      - name: Instalar dependencias
         run: flutter pub get
 
-      - name: Compilar APK en modo Release
-        run: flutter build apk --release --no-shrink
+      - name: Compilar APK con reporte detallado de Dart
+        run: flutter build apk --release --verbose
 
       - name: Renombrar APK resultante
         run: |

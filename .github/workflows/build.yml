@@ -72,6 +72,8 @@ jobs:
         run: |
           rm -rf android
           flutter create . --platforms=android --org com.erpjuan --project-name erp_juan --overwrite
+          # Configura el nombre visible de la app para que aparezca "ERP Juan" en el instalador
+          sed -i 's/android:label="[^"]*"/android:label="ERP Juan"/g' android/app/src/main/AndroidManifest.xml
 
       - name: Check Flutter environment
         run: flutter doctor -v

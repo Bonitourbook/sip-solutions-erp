@@ -1,4 +1,4 @@
-name: Build Android APK (MVC Architecture)
+name: Build Android APK (MVC Complete)
 
 on:
   push:
@@ -72,13 +72,13 @@ jobs:
         run: |
           rm -rf android
           flutter create . --platforms=android --org com.erpjuan --project-name erp_juan --overwrite
-          sed -i 's/android:label="[^"]*"/android:label="ERP Juan"/g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="[^"]*"/android:label="SIP Solutions ERP"/g' android/app/src/main/AndroidManifest.xml
 
-      - name: Implementar Arquitectura MVC en el Proyecto
+      - name: Implementar Estructura MVC y Módulos Completos
         run: |
           mkdir -p lib/models lib/controllers lib/views
 
-          # 1. MODELO: TransactionModel
+          # 1. MODELO
           cat << 'EOF' > lib/models/transaction_model.dart
           class TransactionModel {
             final int? id;
@@ -125,7 +125,7 @@ jobs:
           }
           EOF
 
-          # 2. CONTROLADOR: ErpController (SQLite y Lógica de Negocio)
+          # 2. CONTROLADOR
           cat << 'EOF' > lib/controllers/erp_controller.dart
           import 'package:path/path.dart';
           import 'package:sqflite/sqflite.dart';
@@ -139,7 +139,7 @@ jobs:
 
             Future<Database> get database async {
               if (_database != null) return _database!;
-              _database = await _initDB('erp_juan_mvc.db');
+              _database = await _initDB('sip_solutions_erp.db');
               return _database!;
             }
 
@@ -163,7 +163,6 @@ jobs:
                   ''');
                   await db.insert('transactions', {'type': 'VENTA', 'client': 'Olivia Chen (TechCorp)', 'client_type': 'Colaborador', 'amount': 3000.0, 'status': 'Vencida por 2 días', 'date': '2026-04-15'});
                   await db.insert('transactions', {'type': 'VENTA', 'client': 'Liam Brown (OmniSoft)', 'client_type': 'Cliente Final', 'amount': 3200.0, 'status': '¡Vence Hoy!', 'date': '2026-04-20'});
-                  await db.insert('transactions', {'type': 'COMPRA', 'client': 'Proveedor Central', 'client_type': 'Proveedor', 'amount': 15000.0, 'status': 'Completada', 'date': '2026-04-10'});
                 },
               );
             }
@@ -190,15 +189,16 @@ jobs:
           }
           EOF
 
-          # 3. VISTA: FormScreen (Formulario de Transacciones)
+          # 3. VISTA: FORMULARIO
           cat << 'EOF' > lib/views/form_screen.dart
           import 'package:flutter/material.dart';
           import '../controllers/erp_controller.dart';
           import '../models/transaction_model.dart';
 
           class FormScreen extends StatefulWidget {
+            final String title;
             final String type;
-            const FormScreen({super.key, required this.type});
+            const FormScreen({super.key, required this.title, required this.type});
 
             @override
             State<FormScreen> createState() => _FormScreenState();
@@ -229,17 +229,16 @@ jobs:
 
             @override
             Widget build(BuildContext context) {
-              final isV = widget.type == 'VENTA';
               return Scaffold(
-                appBar: AppBar(title: Text(isV ? 'Registrar Nueva Venta' : 'Registrar Nueva Compra'), backgroundColor: const Color(0xFF111827)),
+                appBar: AppBar(title: Text(widget.title), backgroundColor: const Color(0xFF111827)),
                 body: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      TextField(controller: clientC, decoration: const InputDecoration(labelText: 'Nombre / Razón Social', border: OutlineInputBorder())),
+                      TextField(controller: clientC, decoration: const InputDecoration(labelText: 'Cliente / Razón Social', border: OutlineInputBorder())),
                       const SizedBox(height: 16),
-                      if (isV) ...[
+                      if (widget.type == 'VENTA') ...[
                         DropdownButtonFormField<String>(
                           value: clientType,
                           decoration: const InputDecoration(labelText: 'Tipo de Comprador', border: OutlineInputBorder()),
@@ -257,11 +256,8 @@ jobs:
                       const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: save,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isV ? const Color(0xFF10b981) : const Color(0xFF3b82f6),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: Text('Guardar ' + widget.type, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3b82f6), padding: const EdgeInsets.symmetric(vertical: 16)),
+                        child: const Text('Guardar Registro', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       ),
                     ],
                   ),
@@ -271,37 +267,71 @@ jobs:
           }
           EOF
 
-          # 4. VISTA: DashboardScreen (Panel de Control Principal)
-          cat << 'EOF' > lib/views/dashboard_screen.dart
+          # 4. VISTA: DASHBOARD
+          cat << 'EOF' > lib/views/dashboard_view.dart
           import 'package:flutter/material.dart';
           import '../controllers/erp_controller.dart';
           import '../models/transaction_model.dart';
           import 'form_screen.dart';
 
-          class DashboardScreen extends StatefulWidget {
-            const DashboardScreen({super.key});
+          class DashboardView extends StatefulWidget {
+            const DashboardView({super.key});
 
             @override
-            State<DashboardScreen> createState() => _DashboardScreenState();
+            State<DashboardView> createState() => _DashboardViewState();
           }
 
-          class _DashboardScreenState extends State<DashboardScreen> {
-            double totalVentas = 0.0;
+          class _DashboardViewState extends State<DashboardView> {
+            double totalIngresos = 245310.0;
             List<TransactionModel> items = [];
 
             @override
             void initState() {
               super.initState();
-              refreshData();
+              loadData();
             }
 
-            Future<void> refreshData() async {
-              final v = await ErpController.instance.getSum('VENTA');
+            Future<void> loadData() async {
               final list = await ErpController.instance.getTransactions();
               setState(() {
-                totalVentas = v;
                 items = list;
               });
+            }
+
+            void _showAddOptions(BuildContext context) {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: const Color(0xFF111827),
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                builder: (context) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Seleccionar Operación', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 15),
+                        ListTile(
+                          leading: const Icon(Icons.point_of_sale, color: Colors.greenAccent),
+                          title: const Text('Nueva Venta Contado / Factura', style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nueva Venta', type: 'VENTA'))).then((_) => loadData());
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.request_quote, color: Colors.amberAccent),
+                          title: const Text('Nueva Cta. Cobrar (Registrar crédito)', style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(title: 'Nueva Cta. Cobrar', type: 'VENTA'))).then((_) => loadData());
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
             }
 
             @override
@@ -315,20 +345,33 @@ jobs:
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: const Color(0xFF3b82f6), borderRadius: BorderRadius.circular(8)),
-                        child: const Text('S', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: const Text('S', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
                       ),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
-                          Text('ERP Juan (MVC)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 11, color: Colors.green)),
+                          Text('SIP Solutions ERP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text('• Cuentas & Alertas Activas', style: TextStyle(fontSize: 11, color: Colors.greenAccent)),
                         ],
                       ),
                     ],
                   ),
                   actions: [
-                    IconButton(icon: const Icon(Icons.refresh), onPressed: refreshData),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
+                      child: const Text('DARK UI', style: TextStyle(fontSize: 10, color: Colors.white70)),
+                    ),
+                    IconButton(icon: const Icon(Icons.refresh), onPressed: loadData),
+                    IconButton(
+                      icon: Container(
+                        decoration: BoxDecoration(color: const Color(0xFF3b82f6), borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.add, color: Colors.white),
+                      ),
+                      onPressed: () => _showAddOptions(context),
+                    ),
                   ],
                 ),
                 body: SingleChildScrollView(
@@ -336,68 +379,61 @@ jobs:
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1f161a),
+                          border: Border.all(color: Colors.red.withOpacity(0.4)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Row(
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red, size: 20),
+                                SizedBox(width: 8),
+                                Text('1 Deuda(s) Vencida(s) · Cobrar \$7,550', style: TextStyle(fontSize: 12, color: Colors.redAccent)),
+                              ],
+                            ),
+                            Text('Exportar', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       Row(
                         children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                await Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(type: 'VENTA')));
-                                refreshData();
-                              },
-                              icon: const Icon(Icons.point_of_sale, size: 22),
-                              label: const Text('Nueva Venta', style: TextStyle(fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10b981), padding: const EdgeInsets.symmetric(vertical: 16)),
-                            ),
-                          ),
+                          Expanded(child: MetricCard(title: 'Por Cobrar', val: '\$7,550.00', subtitle: '1 Vencidas (\$3000)', color: Colors.redAccent, icon: Icons.schedule)),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                await Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen(type: 'COMPRA')));
-                                refreshData();
-                              },
-                              icon: const Icon(Icons.shopping_cart_outlined, size: 22),
-                              label: const Text('Nueva Compra', style: TextStyle(fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3b82f6), padding: const EdgeInsets.symmetric(vertical: 16)),
-                            ),
-                          ),
+                          Expanded(child: MetricCard(title: 'Ingresos', val: '\$${totalIngresos.toStringAsFixed(0)}', subtitle: '↗ +12.7% este mes', color: Colors.blueAccent, icon: Icons.attach_money)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Expanded(child: MetricCard(title: 'Valor Stock', val: '\$54,450', subtitle: 'En inventario activo', color: Colors.blueGrey, icon: Icons.inventory_2)),
+                          const SizedBox(width: 12),
+                          const Expanded(child: MetricCard(title: 'Stock Bajo', val: '2 Prod.', subtitle: 'Requieren reposición', color: Colors.orangeAccent, icon: Icons.warning_amber)),
                         ],
                       ),
                       const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Registro Operativo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: const [
+                                Text('🔔 Próximos Vencimientos de Cobro', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 13)),
+                                Text('Ver Todo', style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
+                              ],
+                            ),
                             const SizedBox(height: 12),
-                            ...items.map((tx) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 15,
-                                        backgroundColor: tx.type == 'VENTA' ? Colors.green.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
-                                        child: Icon(tx.type == 'VENTA' ? Icons.arrow_downward : Icons.arrow_upward, color: tx.type == 'VENTA' ? Colors.greenAccent : Colors.blueAccent, size: 14),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(tx.client, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                          Text(tx.type + ' · ' + tx.clientType, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Text('\$' + tx.amount.toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14)),
-                                ],
-                              ),
-                            )),
+                            const VencimientoItem(client: 'Olivia Chen (TechCorp)', badge: 'Vencida por 2 días', amount: '\$3000.00', isAlert: true),
+                            const Divider(color: Colors.white10),
+                            const VencimientoItem(client: 'Liam Brown (OmniSoft)', badge: '¡Vence Hoy!', amount: '\$3200.00', isAlert: false),
                           ],
                         ),
                       ),
@@ -407,25 +443,155 @@ jobs:
               );
             }
           }
+
+          class MetricCard extends StatelessWidget {
+            final String title;
+            final String val;
+            final String subtitle;
+            final Color color;
+            final IconData icon;
+
+            const MetricCard({super.key, required this.title, required this.val, required this.subtitle, required this.color, required this.icon});
+
+            @override
+            Widget build(BuildContext context) {
+              return Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Icon(icon, color: color, size: 16),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(val, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: TextStyle(fontSize: 10, color: color)),
+                  ],
+                ),
+              );
+            }
+          }
+
+          class VencimientoItem extends StatelessWidget {
+            final String client;
+            final String badge;
+            final String amount;
+            final bool isAlert;
+
+            const VencimientoItem({super.key, required this.client, required this.badge, required this.amount, required this.isAlert});
+
+            @override
+            Widget build(BuildContext context) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(client, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isAlert ? Colors.red.withOpacity(0.3) : Colors.amber.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(badge, style: TextStyle(fontSize: 10, color: isAlert ? Colors.redAccent : Colors.amberAccent)),
+                      ),
+                    ],
+                  ),
+                  Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 14)),
+                ],
+              );
+            }
+          }
           EOF
 
-          # 5. MAIN: Punto de entrada principal
+          # 5. VISTA: NAVEGACIÓN INFERIOR
+          cat << 'EOF' > lib/views/main_navigation.dart
+          import 'package:flutter/material.dart';
+          import 'dashboard_view.dart';
+
+          class MainNavigation extends StatefulWidget {
+            const MainNavigation({super.key});
+
+            @override
+            State<MainNavigation> createState() => _MainNavigationState();
+          }
+
+          class _MainNavigationState extends State<MainNavigation> {
+            int _currentIndex = 0;
+
+            final List<Widget> _screens = [
+              const DashboardView(),
+              const PlaceholderModule(title: 'Módulo de Cobros'),
+              const PlaceholderModule(title: 'Módulo de Stock'),
+              const PlaceholderModule(title: 'Módulo de Kardex'),
+              const PlaceholderModule(title: 'Módulo de Clientes'),
+            ];
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                body: _screens[_currentIndex],
+                bottomNavigationBar: BottomNavigationBar(
+                  currentIndex: _currentIndex,
+                  onTap: (index) => setState(() => _currentIndex = index),
+                  backgroundColor: const Color(0xFF0b0f19),
+                  selectedItemColor: Colors.blueAccent,
+                  unselectedItemColor: Colors.grey,
+                  type: BottomNavigationBarType.fixed,
+                  items: const [
+                    BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Inicio'),
+                    BottomNavigationBarItem(icon: Icon(Icons.schedule), label: 'Cobros'),
+                    BottomNavigationBarItem(icon: Icon(Icons.inventory_2_outlined), label: 'Stock'),
+                    BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Kardex'),
+                    BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: 'Clientes'),
+                  ],
+                ),
+              );
+            }
+          }
+
+          class PlaceholderModule extends StatelessWidget {
+            final String title;
+            const PlaceholderModule({super.key, required this.title});
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                appBar: AppBar(title: Text(title), backgroundColor: const Color(0xFF111827)),
+                body: Center(
+                  child: Text('$title en desarrollo', style: const TextStyle(color: Colors.white, fontSize: 16)),
+                ),
+              );
+            }
+          }
+          EOF
+
+          # 6. MAIN GLOBAL
           cat << 'EOF' > lib/main.dart
           import 'package:flutter/material.dart';
-          import 'views/dashboard_screen.dart';
+          import 'views/main_navigation.dart';
 
           void main() async {
             WidgetsFlutterBinding.ensureInitialized();
-            runApp(const ErpJuanApp());
+            runApp(const SipSolutionsApp());
           }
 
-          class ErpJuanApp extends StatelessWidget {
-            const ErpJuanApp({super.key});
+          class SipSolutionsApp extends StatelessWidget {
+            const SipSolutionsApp({super.key});
 
             @override
             Widget build(BuildContext context) {
               return MaterialApp(
-                title: 'ERP Juan',
+                title: 'SIP Solutions ERP',
                 debugShowCheckedModeBanner: false,
                 theme: ThemeData(
                   brightness: Brightness.dark,
@@ -433,17 +599,17 @@ jobs:
                   primaryColor: const Color(0xFF3b82f6),
                   cardColor: const Color(0xFF111827),
                 ),
-                home: const DashboardScreen(),
+                home: const MainNavigation(),
               );
             }
           }
           EOF
 
-      - name: Escribir pubspec.yaml con sqflite y path
+      - name: Escribir pubspec.yaml
         run: |
           cat << 'EOF' > pubspec.yaml
           name: erp_juan
-          description: "ERP Juan - Arquitectura MVC con SQLite"
+          description: "SIP Solutions ERP - MVC Architecture"
           publish_to: 'none'
           version: 1.0.0+1
 
@@ -473,10 +639,10 @@ jobs:
 
       - name: Renombrar APK resultante
         run: |
-          cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/ERP_Juan.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/SIP_Solutions_ERP.apk"
 
       - name: Subir Artifact del APK
         uses: actions/upload-artifact@v4
         with:
-          name: ERP_Juan
-          path: build/app/outputs/flutter-apk/ERP_Juan.apk
+          name: SIP_Solutions_ERP
+          path: build/app/outputs/flutter-apk/SIP_Solutions_ERP.apk

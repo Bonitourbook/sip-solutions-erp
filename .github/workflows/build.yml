@@ -1,4 +1,4 @@
-name: Build ERP Juan v1.0 Debug Dart
+name: Build ERP Juan v1.0 Production Fix
 
 on:
   push:
@@ -68,11 +68,32 @@ jobs:
             "platforms;android-34" \
             "build-tools;34.0.0"
 
-      - name: Instalar dependencias
+      - name: Configurar estructura Android y SDK Min 21
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create . --platforms=android --org com.erpjuan --project-name erp_juan
+          fi
+          
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i 's/minSdkVersion.*/minSdkVersion 21/g' android/app/build.gradle || true
+            sed -i 's/minSdk.*/minSdk = 21/g' android/app/build.gradle || true
+          fi
+          
+          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
+            sed -i 's/android:label="[^"]*"/android:label="ERP Juan v1.0"/g' android/app/src/main/AndroidManifest.xml || true
+          fi
+
+      - name: Instalar dependencias de Flutter
         run: flutter pub get
 
-      - name: Compilar APK con reporte detallado de Dart
-        run: flutter build apk --release --verbose
+      - name: Dar permisos de ejecución a Gradle Wrapper
+        run: |
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
+          fi
+
+      - name: Compilar APK en modo Release sin Shrinking
+        run: flutter build apk --release --no-shrink
 
       - name: Renombrar APK resultante
         run: |
